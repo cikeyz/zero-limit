@@ -4,11 +4,15 @@ import { secureStorage } from '@/services/storage/secureStorage';
 
 const STORAGE_KEY_ACCOUNT_LABELS = 'account-labels';
 
-export function accountLabelKey(provider: string | undefined, filename: string | undefined): string | null {
-  const p = (provider || '').trim().toLowerCase();
-  const f = (filename || '').trim();
-  if (!p || !f) return null;
-  return `${p}::${f}`;
+/**
+ * Stable identity for one auth file across the Providers and Quota pages:
+ * the filename alone (unique per auth file). Provider strings differ
+ * between API shapes, so they must not be part of the key.
+ */
+export function accountLabelKey(filename: string | undefined, id?: string): string | null {
+  const f = (filename || id || '').trim();
+  if (!f) return null;
+  return f;
 }
 
 interface AccountLabelsState {

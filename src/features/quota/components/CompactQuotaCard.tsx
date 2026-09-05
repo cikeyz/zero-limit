@@ -164,19 +164,19 @@ export function CompactQuotaCard({
                 {t('quotaCard.totalBurn', 'Total burn')}
               </div>
               {group.items.map((item, itemIdx) => (
-                <div key={itemIdx} className="flex items-center justify-between gap-2 min-w-0">
-                  <span className="text-muted-foreground font-medium truncate flex-1" title={item.name}>{item.name}</span>
-                  {item.displayValue && (
-                    <span className="font-bold text-sm flex-shrink-0">{item.displayValue}</span>
-                  )}
+                <div key={itemIdx} className="flex items-end justify-between gap-2 min-w-0">
+                  <div className="min-w-0">
+                    <div className="text-muted-foreground font-medium truncate text-xs" title={item.name}>{item.name}</div>
+                    {item.displayValue && (
+                      <div className="font-bold text-xl tracking-tight">{item.displayValue}</div>
+                    )}
+                  </div>
                 </div>
               ))}
             </div>
           ))}
         </div>
       )}
-
-      {/* Collapsed compact summary view - simple inline text */}
 
       {/* Collapsed compact summary view - simple inline text */}
       {!loading && !error && !isSuspended && !isExpanded && (
@@ -247,18 +247,14 @@ export function CompactQuotaCard({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {group.items.map((item, idx) => (
                         <div key={idx} className="rounded-lg border bg-card p-3 space-y-2">
-                          <div className="flex items-center justify-between">
-                            <span className="font-medium text-sm truncate max-w-[180px]" title={item.name}>
-                              {item.name}
+                          <div className="text-xs text-muted-foreground truncate" title={item.name}>{item.name}</div>
+                          {item.separate && item.displayValue ? (
+                            <div className="text-2xl font-bold tracking-tight">{item.displayValue}</div>
+                          ) : (
+                            <span className={`font-bold text-sm ${getPercentColor(item.used ? 100 - item.percentage : item.percentage)}`}>
+                              {item.percentage}{item.used ? '% used' : '%'}
                             </span>
-                            {item.separate && item.displayValue ? (
-                              <span className="text-base font-bold">{item.displayValue}</span>
-                            ) : (
-                              <span className={`font-bold text-sm ${getPercentColor(item.used ? 100 - item.percentage : item.percentage)}`}>
-                                {item.percentage}{item.used ? '% used' : '%'}
-                              </span>
-                            )}
-                          </div>
+                          )}
                           {item.displayValue && !item.separate && (
                             <div className="text-xs text-muted-foreground">
                               {item.displayValue}

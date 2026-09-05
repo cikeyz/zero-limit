@@ -252,7 +252,7 @@ export function useQuotaPresenter() {
         if (!file) return;
         const providerType = getProviderType(file);
         if (grouped[providerType]) {
-          const labelKey = accountLabelKey(file.provider, file.filename || file.id);
+          const labelKey = accountLabelKey(file.filename, file.id);
           const customLabel = labelKey ? (useAccountLabelsStore.getState().labels[labelKey] || '').trim() : '';
           grouped[providerType].push({
             fileId: file.id || file.filename || String(Math.random()),

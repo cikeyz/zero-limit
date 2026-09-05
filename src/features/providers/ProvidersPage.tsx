@@ -326,7 +326,7 @@ export function ProvidersPage() {
                                rawName = formatName((file.metadata?.email as string) || (file.account as string) || file.filename);
                              }
                                const displayNameRaw = (() => {
-                                 const labelKey = accountLabelKey(file.provider, file.filename || file.id);
+                                 const labelKey = accountLabelKey(file.filename, file.id);
                                  const custom = labelKey ? (labels[labelKey] || '').trim() : '';
                                  return custom || rawName;
                                })();
@@ -363,7 +363,7 @@ export function ProvidersPage() {
                                             variant="ghost"
                                             className="h-7 w-7"
                                             onClick={() => {
-                                              const k = accountLabelKey(file.provider, file.filename || file.id);
+                                              const k = accountLabelKey(file.filename, file.id);
                                               if (k) setLabel(k, editingLabel.draft.trim());
                                               setEditingLabel(null);
                                             }}
