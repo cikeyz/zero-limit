@@ -67,7 +67,7 @@ const PROVIDER_DISPLAY: { key: string; name: string }[] = [
   { key: 'cursor', name: 'Cursor' },
   { key: 'gemini-cli', name: 'Gemini CLI' },
   { key: 'copilot', name: 'GitHub Copilot' },
-  { key: 'grok', name: 'Grok (xAI)' },
+  { key: 'grok', name: 'Grok' },
   { key: 'kiro', name: 'Kiro (CodeWhisperer)' },
   { key: 'opencode-go', name: 'OpenCode Go' },
   { key: 'unknown', name: 'Other' },

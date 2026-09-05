@@ -7,6 +7,8 @@ export interface QuotaModel {
   displayValue?: string;
   /** True when percentage means used (vs the default, remaining). */
   used?: boolean;
+  /** True to render as its own trailing group instead of merging. */
+  separate?: boolean;
 }
 
 export interface AntigravityQuotaResult {

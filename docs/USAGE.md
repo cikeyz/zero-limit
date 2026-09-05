@@ -61,7 +61,7 @@ OpenCode Go needs no proxy account. On the **Providers** page, fill in the OpenC
 
 The cookie expires periodically; when quota checks start failing with an authentication error, paste a fresh cookie. Usage appears on the **Quota** page as Rolling, Weekly, and Monthly windows.
 
-### Tracking Grok (xAI) usage
+### Tracking Grok usage
 
 ### Tracking Grok usage
 

@@ -9,6 +9,8 @@ import { openExternalUrl, isTauri } from '@/services/tauri';
 import { toast } from 'sonner';
 import { PLUS_ONLY_PROVIDERS } from '@/constants';
 import { useCliProxyStore } from '@/features/settings/cliProxy.store';
+import { useOpenCodeGoStore, notifyAccountsChanged } from './opencodeGo.store';
+import { useCommandCodeStore } from './commandcode.store';
 
 export function detectIsPlusVersion(serverVersion: string | null | undefined): boolean | null {
   if (!serverVersion) return null;
@@ -70,6 +72,7 @@ export function getProviderIconInfo(providerId: string): { path: string; needsIn
   if (id.includes('antigravity')) return { path: '/antigravity/antigravity.svg', needsInvert: true };
   if (id.includes('claude') || id.includes('anthropic')) return { path: '/claude/claude.png', needsInvert: false };
   if (id.includes('gemini')) return { path: '/gemini/gemini.png', needsInvert: false };
+  if (id.includes('opencode-go') || id.includes('opencode go')) return { path: '/opencode-go/opencode-go.svg', needsInvert: false };
   if (id.includes('codex') || id.includes('openai')) return { path: '/openai/openai.svg', needsInvert: true };
   if (id.includes('kiro')) return { path: '/kiro/kiro.png', needsInvert: false };
   if (id.includes('copilot') || id.includes('github')) return { path: '/copilot/copilot.png', needsInvert: true };
@@ -111,15 +114,24 @@ export function useProvidersPresenter() {
   const [isPrivacyMode, setIsPrivacyMode] = useState(false);
 
   const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({
-    antigravity: true,
-    codex: true,
-    'gemini-cli': true,
-    kiro: true,
-    copilot: true,
-    anthropic: true,
-    cursor: true,
-    other: true
+    antigravity: false,
+    codex: false,
+    'gemini-cli': false,
+    kiro: false,
+    copilot: false,
+    anthropic: false,
+    cursor: false,
+    'opencode-go': false,
+    commandcode: false,
+    other: false
   });
+
+  // Manual-credential trackers (no proxy auth file). Subscribed so the
+  // synthetic Connected-Accounts groups below react to connect/disconnect.
+  const goApiKey = useOpenCodeGoStore((s) => s.apiKey);
+  const goWorkspaceId = useOpenCodeGoStore((s) => s.workspaceId);
+  const goAuthCookie = useOpenCodeGoStore((s) => s.authCookie);
+  const commandCodeApiKey = useCommandCodeStore((s) => s.apiKey);
 
   const groupedFiles = useMemo(() => {
     const groups: Record<string, { displayName: string; files: AuthFile[]; iconInfo: { path: string; needsInvert: boolean } }> = {
@@ -130,6 +142,8 @@ export function useProvidersPresenter() {
       copilot: { displayName: 'GitHub Copilot', files: [], iconInfo: { path: '/copilot/copilot.png', needsInvert: true } },
       anthropic: { displayName: 'Claude (Anthropic)', files: [], iconInfo: { path: '/claude/claude.png', needsInvert: false } },
       cursor: { displayName: 'Cursor', files: [], iconInfo: { path: '/cursor/cursor.svg', needsInvert: true } },
+      'opencode-go': { displayName: 'OpenCode Go', files: [], iconInfo: { path: '/opencode-go/opencode-go.svg', needsInvert: false } },
+      commandcode: { displayName: 'Command Code', files: [], iconInfo: { path: '/commandcode/commandcode.svg', needsInvert: false } },
       other: { displayName: 'Other', files: [], iconInfo: { path: '', needsInvert: false } }
     };
 
@@ -145,11 +159,43 @@ export function useProvidersPresenter() {
       else groups.other.files.push(file);
     });
 
+    // Synthetic rows for manual-credential trackers (no downloadable auth file).
+    // Extra keys ride on AuthFile's index signature; no type changes needed.
+    if (goApiKey || (goWorkspaceId && goAuthCookie)) {
+      groups['opencode-go'].files.push({
+        id: 'synthetic-opencode-go',
+        filename: 'opencode-go-manual',
+        provider: 'opencode-go',
+        account: goWorkspaceId || 'OpenCode Go',
+        isSynthetic: true,
+        syntheticKind: 'opencode-go',
+      });
+    }
+    if (commandCodeApiKey) {
+      groups.commandcode.files.push({
+        id: 'synthetic-commandcode',
+        filename: 'commandcode-manual',
+        provider: 'commandcode',
+        account: 'Command Code',
+        isSynthetic: true,
+        syntheticKind: 'commandcode',
+      });
+    }
+
     return Object.entries(groups).filter(([, group]) => group.files.length > 0);
-  }, [files]);
+  }, [files, goApiKey, goWorkspaceId, goAuthCookie, commandCodeApiKey]);
 
   const toggleProviderExpanded = useCallback((providerId: string) => {
     setExpandedProviders(prev => ({ ...prev, [providerId]: !prev[providerId] }));
+  }, []);
+
+  const disconnectSyntheticProvider = useCallback((kind: 'opencode-go' | 'commandcode') => {
+    if (kind === 'opencode-go') {
+      useOpenCodeGoStore.getState().clearCredentials();
+    } else {
+      useCommandCodeStore.getState().clearApiKey();
+    }
+    notifyAccountsChanged();
   }, []);
 
   // Cleanup polling timers on unmount
@@ -230,7 +276,8 @@ export function useProvidersPresenter() {
 
       const filesToProcess = groupedFiles
         .filter(([id]) => selectedProvidersForCopy.includes(id))
-        .flatMap(([, group]) => group.files);
+        .flatMap(([, group]) => group.files)
+        .filter((file) => !file.isSynthetic);
 
       for (const file of filesToProcess) {
         let name = file.name || file.filename || file.id;
@@ -628,6 +675,7 @@ export function useProvidersPresenter() {
     groupedFiles,
     expandedProviders,
     toggleProviderExpanded,
+    disconnectSyntheticProvider,
 
     // Delete confirmation
     fileToDelete,

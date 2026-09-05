@@ -2,12 +2,42 @@
  * OpenCode Go quota service.
  *
  * Primary path: the official usage API (`GET /zen/go/v1/usage`, Bearer
- * API key from the local OpenCode `opencode-go` entry). Returns rolling,
- * weekly, and monthly windows as percent-used with ISO reset times.
+ * API key from the local OpenCode `opencode-go` entry).
+ *
+ * API contract (server source:
+ * `packages/console/app/src/routes/zen/go/v1/usage.ts` -> `formatUsage()`
+ * over `Subscription.analyzeRollingUsage / analyzeWeeklyUsage /
+ * analyzeMonthlyUsage` in `packages/console/core/src/subscription.ts`):
+ * - Shape: `{ usage: { rolling, weekly, monthly } }`, each window
+ *   `{ status: "ok" | "rate-limited", percent: number, resetsAt: string }`.
+ * - `percent` is `Math.floor(min(100, usage / limit * 100))`: a floored
+ *   INTEGER (0-100; 100 when rate-limited). It can never carry the
+ *   dashboard's 1-decimal precision, so we must NOT synthesize decimals
+ *   from it (no +0.5 / interpolation): preserve the value as-is.
+ * - `resetsAt` is an ISO timestamp computed server-side as
+ *   `now + resetInSec * 1000` (`resetInSec` itself is `Math.ceil`ed).
+ *   Convert to display text with `formatTimeUntil`, same as the page path.
+ * - `status` is informational (`rate-limited` accompanies `percent: 100`
+ *   and is still a valid meter: the dashboard renders it as 100%, so we
+ *   keep such windows instead of dropping them).
+ * - The route takes no query params and exposes no richer fields (no
+ *   usage/limit dollars, no decimals). There is no better official
+ *   endpoint: `/docs/go` documents only `/zen/go/v1/models`, and the Zen
+ *   balance has no official API (tracked in `anomalyco/opencode#44189`).
  *
  * Fallback path: the workspace Go page (workspace ID + `auth` cookie)
- * scraped for the same windows. HTML scraping approach adapted from
- * whosydd/opencode-quota (MIT License, Copyright (c) 2026 GY).
+ * scraped for the same windows. The page's `queryLiteSubscription` (in
+ * `packages/console/app/src/routes/workspace/[id]/go/lite-section.tsx`)
+ * reuses the same analyze* results for `status`/`resetInSec` but OVERWRITES
+ * `usagePercent` with `getUsagePercent()` (`packages/console/app/src/lib/
+ * lite-usage.ts`: `Math.round(amount / limit * 1000) / 10`, 1-decimal).
+ * The SSR hydration objects therefore carry `{ usagePercent (1-decimal),
+ * resetInSec, usage, limit }`, and the page renders e.g. `7.2%` where the
+ * API reports `percent: 7` (floor). The page scrape is the most precise
+ * source when a cookie is available; the API is the best source for
+ * key-only auth (account-wide, server-accurate, no cookie needed).
+ * HTML scraping approach adapted from whosydd/opencode-quota (MIT License,
+ * Copyright (c) 2026 GY).
  */
 
 import { apiCallApi } from './apiCall';
@@ -39,7 +69,11 @@ interface OfficialWindow {
 }
 
 function officialModel(name: string, window: OfficialWindow | undefined): QuotaModel | null {  if (!window || typeof window !== 'object') return null;
-  if (window.status !== undefined && window.status !== 'ok') return null;
+  // `status` is "ok" normally and "rate-limited" at 100%: both are valid
+  // meters (the dashboard renders rate-limited as 100%), so only reject
+  // unknown status values, never a known one. `percent` is a server-floored
+  // integer: keep full precision as-is, do not round or adjust.
+  if (window.status !== undefined && window.status !== 'ok' && window.status !== 'rate-limited') return null;
   const used = normalizeNumberValue(window.percent);
   if (used === null) return null;
   const resetsAt = window.resetsAt;
@@ -150,7 +184,10 @@ function extractWindow(html: string, field: string): { quotaPercent: number; res
   const quotaPercent = normalizeNumberValue(parsed.usagePercent);
   const resetInSec = normalizeNumberValue(parsed.resetInSec);
   if (quotaPercent === null || resetInSec === null) return null;
-  return { quotaPercent: Math.round(quotaPercent), resetInSec: Math.max(0, Math.round(resetInSec)) };
+  // Preserve the page's 1-decimal `usagePercent` (e.g. 7.2): rounding here
+  // would throw away the precision advantage the scrape has over the API's
+  // floored integer. `resetInSec` is whole seconds, so rounding it is safe.
+  return { quotaPercent, resetInSec: Math.max(0, Math.round(resetInSec)) };
 }
 
 export function parseOpenCodeGoPage(html: string): OpenCodeGoQuotaResult {

@@ -61,6 +61,7 @@ export function ProvidersPage() {
     groupedFiles,
     expandedProviders,
     toggleProviderExpanded,
+    disconnectSyntheticProvider,
     fileToDelete,
     setFileToDelete,
     executeDelete,
@@ -98,8 +99,11 @@ export function ProvidersPage() {
     executeCopyAll,
   } = useProvidersPresenter();
 
+  // Total rows across auth-file groups + synthetic manual-tracker groups.
+  const connectedCount = groupedFiles.reduce((total, [, group]) => total + group.files.length, 0);
+
   if (!isAuthenticated) {
-     return (
+    return (
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -192,7 +196,7 @@ export function ProvidersPage() {
              <div className="flex items-center justify-between px-2">
                 <h2 className="text-lg font-semibold flex items-center gap-2 text-muted-foreground">
                     <CheckCircle className="h-5 w-5" />
-                    {t('providers.connectedAccounts')} ({files.length})
+                    {t('providers.connectedAccounts')} ({connectedCount})
                 </h2>
                 <div className="flex items-center gap-2">
                   <Button
@@ -244,7 +248,7 @@ export function ProvidersPage() {
             )}
 
             {/* List of Connected Accounts */}
-            {!loadingFiles && files.length === 0 && (
+            {!loadingFiles && groupedFiles.length === 0 && (
                 <div className="flex flex-col items-center justify-center py-8 text-muted-foreground border border-dashed rounded-lg">
                     <p>{t('providers.noAccounts')}</p>
                 </div>
@@ -252,7 +256,7 @@ export function ProvidersPage() {
 
             <div className="space-y-2">
                  {groupedFiles.map(([providerId, group]) => {
-                   const isExpanded = expandedProviders[providerId] ?? true;
+                    const isExpanded = expandedProviders[providerId] ?? false;
 
                    return (
                      <div key={providerId} className="border rounded-lg overflow-hidden">
@@ -309,7 +313,13 @@ export function ProvidersPage() {
                              } else {
                                rawName = formatName((file.metadata?.email as string) || (file.account as string) || file.filename);
                              }
-                             const displayName = isPrivacyMode ? maskEmail(rawName) : rawName;
+                              const displayName = isPrivacyMode ? maskEmail(rawName) : rawName;
+                              // Synthetic manual-tracker rows have no auth file: no
+                              // download/copy-token actions, delete disconnects instead.
+                              const rawKind = file.syntheticKind;
+                              const syntheticKind: 'opencode-go' | 'commandcode' | null =
+                                rawKind === 'opencode-go' || rawKind === 'commandcode' ? rawKind : null;
+                              const isSynthetic = file.isSynthetic === true || syntheticKind !== null;
 
                              return (
                                <div
@@ -332,35 +342,39 @@ export function ProvidersPage() {
                                    </div>
                                  </div>
 
-                                 <div className="flex items-center gap-1">
-                                   <Button
-                                     size="icon"
-                                     variant="ghost"
-                                     className="h-8 w-8 text-primary hover:bg-primary/10 opacity-80 group-hover:opacity-100"
-                                     onClick={() => downloadAuthFile(file.name || file.filename || file.id)}
-                                     title={t('providers.download', 'Download')}
-                                   >
-                                     <Download className="h-4 w-4" />
-                                   </Button>
-                                   <Button
-                                     size="icon"
-                                     variant="ghost"
-                                     className="h-8 w-8 text-primary hover:bg-primary/10 opacity-80 group-hover:opacity-100"
-                                     onClick={() => copyRefreshToken(file.name || file.filename || file.id)}
-                                     title={t('common.copyRefreshToken', 'Copy Refresh Token')}
-                                   >
-                                     <Key className="h-4 w-4" />
-                                   </Button>
-                                   <Button
-                                     size="icon"
-                                     variant="ghost"
-                                     className="h-8 w-8 text-destructive hover:bg-destructive/10 opacity-80 group-hover:opacity-100"
-                                     onClick={() => setFileToDelete(file.id)}
-                                     title={t('common.delete')}
-                                   >
-                                     <Trash2 className="h-4 w-4" />
-                                   </Button>
-                                 </div>
+                                  <div className="flex items-center gap-1">
+                                    {!isSynthetic && (
+                                      <>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-8 w-8 text-primary hover:bg-primary/10 opacity-80 group-hover:opacity-100"
+                                          onClick={() => downloadAuthFile(file.name || file.filename || file.id)}
+                                          title={t('providers.download', 'Download')}
+                                        >
+                                          <Download className="h-4 w-4" />
+                                        </Button>
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-8 w-8 text-primary hover:bg-primary/10 opacity-80 group-hover:opacity-100"
+                                          onClick={() => copyRefreshToken(file.name || file.filename || file.id)}
+                                          title={t('common.copyRefreshToken', 'Copy Refresh Token')}
+                                        >
+                                          <Key className="h-4 w-4" />
+                                        </Button>
+                                      </>
+                                    )}
+                                    <Button
+                                      size="icon"
+                                      variant="ghost"
+                                      className="h-8 w-8 text-destructive hover:bg-destructive/10 opacity-80 group-hover:opacity-100"
+                                      onClick={() => syntheticKind ? disconnectSyntheticProvider(syntheticKind) : setFileToDelete(file.id)}
+                                      title={syntheticKind ? t('common.disconnect', 'Disconnect') : t('common.delete')}
+                                    >
+                                      <Trash2 className="h-4 w-4" />
+                                    </Button>
+                                  </div>
                                </div>
                              );
                            })}

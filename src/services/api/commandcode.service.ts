@@ -106,6 +106,7 @@ export function parseCommandCodeQuota(
         displayValue: `${compact} tokens${totalCount !== null && totalCount > 0 ? ` · ${Math.round(totalCount).toLocaleString()} runs` : ''} (month to date)`,
         resetTime: monthlyReset,
         used: true,
+        separate: true,
       });
     }
   }

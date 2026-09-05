@@ -47,38 +47,12 @@ export function ProviderQuotaCard({
   const groupedItems = useMemo(() => {
     const groups: Record<string, QuotaModel[]> = {};
     const isAntigravity = provider.toLowerCase().includes('antigravity');
+    const lowerProvider = provider.toLowerCase();
+    const providerId = lowerProvider.replace(/[\s-]+/g, '');
 
-    items.forEach(item => {
-      const name = item.name.toLowerCase();
-      let groupName = 'Other';
-
-      if (name.includes('claude')) groupName = 'Claude';
-      else if (name.includes('gemini') && name.includes('pro')) groupName = 'Gemini Pro';
-      else if (name.includes('gemini') && name.includes('flash')) groupName = 'Gemini Flash';
-      else if (name.includes('gemini')) groupName = 'Gemini';
-      else if (!isAntigravity) {
-        if (name.includes('gpt-4')) groupName = 'GPT-4';
-        else if (name.includes('gpt-3.5')) groupName = 'GPT-3.5';
-        else if (name.includes('gpt') || name.includes('o1')) groupName = 'GPT';
-      }
-
-      // Ungrouped models collect under their provider instead of a generic bucket.
-      if (groupName === 'Other') groupName = provider;
-
-      if (!groups[groupName]) groups[groupName] = [];
-      groups[groupName].push(item);
-    });
-
-    return Object.entries(groups).map(([name, groupItems]) => {
-      const total = groupItems.reduce((sum, i) => sum + i.percentage, 0);
-      const avg = Math.round(total / groupItems.length);
-      const resetTime = groupItems.find(i => i.resetTime)?.resetTime;
-      const used = groupItems.some(i => i.used);
-
+    const resolveIcon = (groupName: string): { icon: string | undefined; needsInvert: boolean } => {
+      const lowerName = groupName.toLowerCase();
       let icon: string | undefined;
-      const lowerName = name.toLowerCase();
-      const lowerProvider = provider.toLowerCase();
-      const providerId = lowerProvider.replace(/[\s-]+/g, '');
 
       if (lowerName.includes('claude')) {
         icon = '/claude/claude.png';
@@ -109,6 +83,39 @@ export function ProviderQuotaCard({
       }
 
       const needsInvert = ['/copilot/copilot.png', '/cursor/cursor.svg', '/opencode-go/opencode-go.svg', '/grok/grok.svg', '/antigravity/antigravity.svg', '/openai/openai.svg'].includes(icon);
+      return { icon, needsInvert };
+    };
+
+    // Standalone totals (e.g. token counts) render as their own trailing groups.
+    const standalone = items.filter(i => i.separate);
+
+    items.filter(i => !i.separate).forEach(item => {
+      const name = item.name.toLowerCase();
+      let groupName = 'Other';
+
+      if (name.includes('claude')) groupName = 'Claude';
+      else if (name.includes('gemini') && name.includes('pro')) groupName = 'Gemini Pro';
+      else if (name.includes('gemini') && name.includes('flash')) groupName = 'Gemini Flash';
+      else if (name.includes('gemini')) groupName = 'Gemini';
+      else if (!isAntigravity) {
+        if (name.includes('gpt-4')) groupName = 'GPT-4';
+        else if (name.includes('gpt-3.5')) groupName = 'GPT-3.5';
+        else if (name.includes('gpt') || name.includes('o1')) groupName = 'GPT';
+      }
+
+      // Ungrouped models collect under their provider instead of a generic bucket.
+      if (groupName === 'Other') groupName = provider;
+
+      if (!groups[groupName]) groups[groupName] = [];
+      groups[groupName].push(item);
+    });
+
+    const main = Object.entries(groups).map(([name, groupItems]) => {
+      const total = groupItems.reduce((sum, i) => sum + i.percentage, 0);
+      const avg = Math.round(total / groupItems.length);
+      const resetTime = groupItems.find(i => i.resetTime)?.resetTime;
+      const used = groupItems.some(i => i.used);
+      const { icon, needsInvert } = resolveIcon(name);
 
       return {
         name,
@@ -120,6 +127,21 @@ export function ProviderQuotaCard({
         needsInvert
       };
     }).sort((a, b) => a.name.localeCompare(b.name));
+
+    for (const item of standalone) {
+      const { icon, needsInvert } = resolveIcon(item.name);
+      main.push({
+        name: item.name,
+        percentage: item.percentage,
+        used: item.used ?? false,
+        items: [item],
+        resetTime: item.resetTime,
+        icon,
+        needsInvert
+      });
+    }
+
+    return main;
   }, [items, provider]);
 
   // Check if account is suspended
