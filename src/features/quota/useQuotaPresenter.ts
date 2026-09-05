@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
 import { useAuthStore } from '@/features/auth/auth.store';
 import { authFilesApi } from '@/services/api/auth.service';
 import { quotaApi } from '@/services/api/quota.service';
@@ -6,7 +6,7 @@ import type { AuthFile, FileQuota, ProviderSection } from '@/types';
 import type { ProviderFilterItem } from '@/features/quota/components/ProviderFilter';
 import { resolveCodexChatgptAccountId, resolveCodexPlanType } from '@/shared/utils/quota.helpers';
 import { useOpenCodeGoStore } from '@/features/providers/opencodeGo.store';
-import { opencodeGoApi } from '@/services/api/opencodeGo.service';
+import { opencodeGoApi, extractWorkspaceId } from '@/services/api/opencodeGo.service';
 import { useXaiStore } from '@/features/providers/xai.store';
 import { xaiApi } from '@/services/api/xai.service';
 import { grokCliApi } from '@/services/api/grokCli.service';
@@ -260,6 +260,7 @@ export function useQuotaPresenter() {
             provider: providerType.charAt(0).toUpperCase() + providerType.slice(1),
             providerKey: providerType,
             loading: false,
+            email: (file.metadata?.email as string) || (file.account as string) || undefined,
             originalFile: file
           });
         }
@@ -274,13 +275,14 @@ export function useQuotaPresenter() {
       const { apiKey: goApiKey, workspaceId: goWorkspaceId, authCookie: goAuthCookie } = useOpenCodeGoStore.getState();
       const goConnected = Boolean(goApiKey || (goWorkspaceId && goAuthCookie));
       if (goConnected) {
+        const goLabel = (useOpenCodeGoStore.getState().label || '').trim();
         const goFile: FileQuota = {
           fileId: 'opencode-go',
-          filename: (useOpenCodeGoStore.getState().label || '').trim() || 'OpenCode Go',
+          filename: goLabel || 'OpenCode Go',
           provider: 'OpenCode Go',
           providerKey: 'opencode-go',
           loading: false,
-          email: (useOpenCodeGoStore.getState().label || '').trim() || goWorkspaceId || undefined,
+          email: goLabel || extractWorkspaceId(goWorkspaceId) || goWorkspaceId || undefined,
         };
         setSections((prev) => prev.map((s) => (s.provider === 'opencode-go' ? { ...s, files: [goFile] } : s)));
       }
@@ -340,6 +342,21 @@ export function useQuotaPresenter() {
   useEffect(() => {
     loadAuthFiles();
   }, [loadAuthFiles]);
+
+  // Rebuild sections when display labels change elsewhere (e.g. renamed
+  // on the Providers page while Quota stays mounted).
+  const goLabel = useOpenCodeGoStore((s) => s.label);
+  const grokLabel = useXaiStore((s) => s.label);
+  const ccLabel = useCommandCodeStore((s) => s.label);
+  const oauthLabels = useAccountLabelsStore((s) => s.labels);
+  const labelsMounted = useRef(false);
+  useEffect(() => {
+    if (!labelsMounted.current) {
+      labelsMounted.current = true;
+      return;
+    }
+    loadAuthFiles();
+  }, [goLabel, grokLabel, ccLabel, oauthLabels, loadAuthFiles]);
 
   const filterItems: ProviderFilterItem[] = useMemo(() => {
     return sections

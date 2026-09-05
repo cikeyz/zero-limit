@@ -5,7 +5,7 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { notifyAccountsChanged, useOpenCodeGoStore } from '@/features/providers/opencodeGo.store';
-import { opencodeGoApi } from '@/services/api/opencodeGo.service';
+import { opencodeGoApi, extractWorkspaceId } from '@/services/api/opencodeGo.service';
 import { isTauri } from '@/services/tauri';
 
 type Checking = 'auto' | 'manual' | null;
@@ -59,7 +59,7 @@ export function OpenCodeGoCard() {
 
   const handleConnect = async () => {
     setError(null);
-    const wid = widInput.trim();
+    const wid = extractWorkspaceId(widInput) || '';
     const cookie = cookieInput.trim();
     if (!wid || !cookie) {
       setError(t('opencodeGo.missingFields', 'Enter both the workspace ID and the auth cookie.'));

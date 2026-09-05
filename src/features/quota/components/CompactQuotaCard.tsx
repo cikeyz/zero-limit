@@ -5,6 +5,7 @@
 import { Card } from '@/shared/components/ui/card';
 import { Badge } from '@/shared/components/ui/badge';
 import { Clock, RefreshCw, Eye, List, ChevronDown, Ban } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { useMemo, useState } from 'react';
 import {
   Dialog,
@@ -33,6 +34,7 @@ interface CompactQuotaCardProps {
 
 export function CompactQuotaCard({
   email,
+  filename,
   loading,
   error,
   items,
@@ -40,13 +42,14 @@ export function CompactQuotaCard({
   onRefresh,
   isPrivacyMode
 }: CompactQuotaCardProps) {
+  const { t } = useTranslation();
   const [isExpanded, setIsExpanded] = useState(true);
 
   // Check if account is suspended
   const isSuspended = plan?.toLowerCase() === 'suspended';
 
   // Apply masking
-  const displayEmail = isPrivacyMode ? maskEmail(email || '') : (email || '********@*****.com');
+  const displayEmail = isPrivacyMode ? maskEmail(email || '') : (email || filename || '');
 
   // Group items by model type (for Antigravity) or show as-is (for Codex limits)
   const groupedItems = useMemo(() => {

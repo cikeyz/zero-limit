@@ -12,6 +12,7 @@ import { useCliProxyStore } from '@/features/settings/cliProxy.store';
 import { useOpenCodeGoStore, notifyAccountsChanged } from './opencodeGo.store';
 import { useCommandCodeStore } from './commandcode.store';
 import { useXaiStore } from './xai.store';
+import { extractWorkspaceId } from '@/services/api/opencodeGo.service';
 
 export function detectIsPlusVersion(serverVersion: string | null | undefined): boolean | null {
   if (!serverVersion) return null;
@@ -168,7 +169,7 @@ export function useProvidersPresenter() {
         id: 'synthetic-opencode-go',
         filename: 'opencode-go-manual',
         provider: 'opencode-go',
-        account: goWorkspaceId || 'OpenCode Go',
+        account: extractWorkspaceId(goWorkspaceId) || goWorkspaceId || 'OpenCode Go',
         isSynthetic: true,
         syntheticKind: 'opencode-go',
       });
