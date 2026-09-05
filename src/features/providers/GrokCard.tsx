@@ -121,9 +121,9 @@ export function GrokCard() {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <img src="/grok/grok.svg" alt="Grok" className="h-8 w-8 object-contain" />
-          <div>
-            <CardTitle className="text-base">{t('grok.title', 'Grok (xAI)')}</CardTitle>
+          <img src="/grok/grok.svg" alt="Grok" className="h-8 w-8 shrink-0 object-contain" />
+          <div className="min-w-0 flex-1">
+            <CardTitle className="truncate text-base">{t('grok.title', 'Grok (xAI)')}</CardTitle>
             <CardDescription>
               {t('grok.description', 'Track xAI API credits or the free-tier Grok CLI session.')}
             </CardDescription>

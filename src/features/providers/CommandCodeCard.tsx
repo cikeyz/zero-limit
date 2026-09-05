@@ -57,9 +57,9 @@ export function CommandCodeCard() {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <img src="/commandcode/commandcode.svg" alt="Command Code" className="h-8 w-8 object-contain" />
-          <div>
-            <CardTitle className="text-base">{t('commandcode.title', 'Command Code')}</CardTitle>
+          <img src="/commandcode/commandcode.svg" alt="Command Code" className="h-8 w-8 shrink-0 object-contain" />
+          <div className="min-w-0 flex-1">
+            <CardTitle className="truncate text-base">{t('commandcode.title', 'Command Code')}</CardTitle>
             <CardDescription>
               {connected
                 ? t('commandcode.connected', 'API key saved')
