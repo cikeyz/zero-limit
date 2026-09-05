@@ -67,13 +67,16 @@ export function formatName(name: string | undefined | null): string {
 
 export function getProviderIconInfo(providerId: string): { path: string; needsInvert: boolean } {
   const id = providerId.toLowerCase();
-  if (id.includes('antigravity')) return { path: '/antigravity/antigravity.png', needsInvert: false };
+  if (id.includes('antigravity')) return { path: '/antigravity/antigravity.svg', needsInvert: true };
   if (id.includes('claude') || id.includes('anthropic')) return { path: '/claude/claude.png', needsInvert: false };
   if (id.includes('gemini')) return { path: '/gemini/gemini.png', needsInvert: false };
   if (id.includes('codex') || id.includes('openai')) return { path: '/openai/openai.png', needsInvert: false };
   if (id.includes('kiro')) return { path: '/kiro/kiro.png', needsInvert: false };
   if (id.includes('copilot') || id.includes('github')) return { path: '/copilot/copilot.png', needsInvert: true };
   if (id.includes('cursor')) return { path: '/cursor/cursor.svg', needsInvert: true };
+  if (id.includes('commandcode') || id.includes('command-code') || id.includes('command code')) {
+    return { path: '/commandcode/commandcode.svg', needsInvert: false };
+  }
   return { path: '', needsInvert: false };
 }
 
@@ -105,7 +108,7 @@ export function useProvidersPresenter() {
   const [projectInput, setProjectInput] = useState('');
   const pollingTimers = useRef<Record<string, number>>({});
 
-  const [isPrivacyMode, setIsPrivacyMode] = useState(true);
+  const [isPrivacyMode, setIsPrivacyMode] = useState(false);
 
   const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({
     antigravity: true,
@@ -120,7 +123,7 @@ export function useProvidersPresenter() {
 
   const groupedFiles = useMemo(() => {
     const groups: Record<string, { displayName: string; files: AuthFile[]; iconInfo: { path: string; needsInvert: boolean } }> = {
-      antigravity: { displayName: 'Antigravity', files: [], iconInfo: { path: '/antigravity/antigravity.png', needsInvert: false } },
+      antigravity: { displayName: 'Antigravity', files: [], iconInfo: { path: '/antigravity/antigravity.svg', needsInvert: true } },
       codex: { displayName: 'Codex (OpenAI)', files: [], iconInfo: { path: '/openai/openai.png', needsInvert: false } },
       'gemini-cli': { displayName: 'Gemini CLI', files: [], iconInfo: { path: '/gemini/gemini.png', needsInvert: false } },
       kiro: { displayName: 'Kiro (CodeWhisperer)', files: [], iconInfo: { path: '/kiro/kiro.png', needsInvert: false } },

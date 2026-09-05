@@ -5,6 +5,8 @@ export interface QuotaModel {
   percentage: number;
   resetTime?: string;
   displayValue?: string;
+  /** True when percentage means used (vs the default, remaining). */
+  used?: boolean;
 }
 
 export interface AntigravityQuotaResult {

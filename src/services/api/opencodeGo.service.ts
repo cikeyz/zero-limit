@@ -45,8 +45,10 @@ function officialModel(name: string, window: OfficialWindow | undefined): QuotaM
   const resetsAt = window.resetsAt;
   return {
     name,
-    percentage: Math.min(100, Math.max(0, 100 - used)),
+    // Shown as-used to mirror the Go page (unlike percent-left providers).
+    percentage: Math.min(100, Math.max(0, used)),
     resetTime: typeof resetsAt === 'string' && resetsAt ? formatTimeUntil(resetsAt) : undefined,
+    used: true,
   };
 }
 
@@ -166,8 +168,9 @@ export function parseOpenCodeGoPage(html: string): OpenCodeGoQuotaResult {
   return {
     models: found.map(({ name, window }) => ({
       name,
-      percentage: Math.min(100, Math.max(0, 100 - window.quotaPercent)),
+      percentage: Math.min(100, Math.max(0, window.quotaPercent)),
       resetTime: formatTimeUntil(nowSec + window.resetInSec),
+      used: true,
     })),
   };
 }

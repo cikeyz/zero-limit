@@ -77,7 +77,7 @@ export function CompactQuotaCard({
       const avg = Math.round(total / groupItems.length);
       const resetTime = groupItems.find(i => i.resetTime)?.resetTime;
 
-      return { name, percentage: avg, resetTime, items: groupItems };
+      return { name, percentage: avg, used: groupItems.some(i => i.used), resetTime, items: groupItems };
     }).sort((a, b) => a.name.localeCompare(b.name));
   }, [items]);
 
@@ -141,14 +141,14 @@ export function CompactQuotaCard({
                     {group.resetTime}
                   </span>
                 )}
-                <span className={`font-bold flex-shrink-0 ${getPercentColor(group.percentage)}`}>
-                  {group.percentage}%
+                <span className={`font-bold flex-shrink-0 ${getPercentColor(group.used ? 100 - group.percentage : group.percentage)}`}>
+                  {group.percentage}{group.used ? '% used' : '%'}
                 </span>
               </div>
               {/* Progress bar */}
               <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                 <div
-                  className={`h-full rounded-full transition-all duration-500 ${getProgressColor(group.percentage)}`}
+                  className={`h-full rounded-full transition-all duration-500 ${getProgressColor(group.used ? 100 - group.percentage : group.percentage)}`}
                   style={{ width: `${group.percentage}%` }}
                 />
               </div>
@@ -220,10 +220,15 @@ export function CompactQuotaCard({
                             <span className="font-medium text-sm truncate max-w-[180px]" title={item.name}>
                               {item.name}
                             </span>
-                            <span className={`font-bold text-sm ${getPercentColor(item.percentage)}`}>
-                              {item.percentage}%
+                            <span className={`font-bold text-sm ${getPercentColor(item.used ? 100 - item.percentage : item.percentage)}`}>
+                              {item.percentage}{item.used ? '% used' : '%'}
                             </span>
                           </div>
+                          {item.displayValue && (
+                            <div className="text-xs text-muted-foreground">
+                              {item.displayValue}
+                            </div>
+                          )}
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                             <div
                               className={`h-full rounded-full ${getProgressColor(item.percentage)}`}

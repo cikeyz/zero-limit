@@ -62,6 +62,9 @@ export function ProviderQuotaCard({
         else if (name.includes('gpt') || name.includes('o1')) groupName = 'GPT';
       }
 
+      // Ungrouped models collect under their provider instead of a generic bucket.
+      if (groupName === 'Other') groupName = provider;
+
       if (!groups[groupName]) groups[groupName] = [];
       groups[groupName].push(item);
     });
@@ -70,10 +73,12 @@ export function ProviderQuotaCard({
       const total = groupItems.reduce((sum, i) => sum + i.percentage, 0);
       const avg = Math.round(total / groupItems.length);
       const resetTime = groupItems.find(i => i.resetTime)?.resetTime;
+      const used = groupItems.some(i => i.used);
 
       let icon: string | undefined;
       const lowerName = name.toLowerCase();
       const lowerProvider = provider.toLowerCase();
+      const providerId = lowerProvider.replace(/[\s-]+/g, '');
 
       if (lowerName.includes('claude')) {
         icon = '/claude/claude.png';
@@ -83,7 +88,7 @@ export function ProviderQuotaCard({
         icon = '/openai/openai.png';
       } else if (lowerName === 'other' || !icon) {
         if (lowerProvider.includes('antigravity')) {
-          icon = '/openai/openai.png';
+          icon = '/antigravity/antigravity.svg';
         } else if (lowerProvider.includes('codex')) {
           icon = '/openai/openai.png';
         } else if (lowerProvider.includes('kiro')) {
@@ -96,18 +101,19 @@ export function ProviderQuotaCard({
           icon = '/opencode-go/opencode-go.svg';
         } else if (lowerProvider.includes('grok') || lowerProvider.includes('xai')) {
           icon = '/grok/grok.svg';
-        } else if (lowerProvider.includes('commandcode') || lowerProvider.includes('command-code')) {
+        } else if (providerId.includes('commandcode')) {
           icon = '/commandcode/commandcode.svg';
         } else {
           icon = '/openai/openai.png'; // Default fallback
         }
       }
 
-      const needsInvert = ['/copilot/copilot.png', '/cursor/cursor.svg', '/opencode-go/opencode-go.svg', '/grok/grok.svg'].includes(icon);
+      const needsInvert = ['/copilot/copilot.png', '/cursor/cursor.svg', '/opencode-go/opencode-go.svg', '/grok/grok.svg', '/antigravity/antigravity.svg'].includes(icon);
 
       return {
         name,
         percentage: avg,
+        used,
         items: groupItems,
         resetTime,
         icon,
@@ -198,10 +204,15 @@ export function ProviderQuotaCard({
                                                     <span className="font-medium text-sm truncate max-w-[180px]" title={item.name}>
                                                         {item.name}
                                                     </span>
-                                                    <span className={`font-bold text-sm ${item.percentage > 20 ? 'text-green-500' : 'text-yellow-500'}`}>
-                                                        {item.percentage}%
+                                                    <span className={`font-bold text-sm ${item.used ? (item.percentage < 80 ? 'text-green-500' : 'text-yellow-500') : (item.percentage > 20 ? 'text-green-500' : 'text-yellow-500')}`}>
+                                                        {item.percentage}{item.used ? '% used' : '%'}
                                                     </span>
                                                 </div>
+                                                {item.displayValue && (
+                                                    <div className="text-xs text-muted-foreground">
+                                                        {item.displayValue}
+                                                    </div>
+                                                )}
                                                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                                                     <div
                                                         className={`h-full rounded-full ${item.percentage > 20 ? 'bg-green-500' : 'bg-yellow-500'}`}
@@ -264,8 +275,8 @@ export function ProviderQuotaCard({
                                 <span className="text-xs text-muted-foreground">({group.items.length} models)</span>
                             </div>
                             <div className="flex items-center gap-3 text-xs">
-                                <span className={`font-bold ${group.percentage > 20 ? 'text-green-500' : 'text-yellow-500'}`}>
-                                    {group.percentage}% left
+                                <span className={`font-bold ${group.used ? (group.percentage < 80 ? 'text-green-500' : 'text-yellow-500') : (group.percentage > 20 ? 'text-green-500' : 'text-yellow-500')}`}>
+                                    {group.percentage}% {group.used ? 'used' : 'left'}
                                 </span>
                                 {group.resetTime && (
                                     <div className="flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-muted-foreground">
@@ -278,7 +289,7 @@ export function ProviderQuotaCard({
 
                         <div className="h-2 w-full overflow-hidden rounded-full bg-secondary">
                             <div
-                                className={`h-full rounded-full transition-all duration-500 ${group.percentage > 20 ? 'bg-green-500' : 'bg-yellow-500'}`}
+                                className={`h-full rounded-full transition-all duration-500 ${group.used ? (group.percentage < 80 ? 'bg-green-500' : 'bg-yellow-500') : (group.percentage > 20 ? 'bg-green-500' : 'bg-yellow-500')}`}
                                 style={{ width: `${group.percentage}%` }}
                             />
                         </div>

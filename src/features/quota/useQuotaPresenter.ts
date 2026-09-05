@@ -25,7 +25,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (filename.startsWith('cursor-') || filename.includes('cursor')) return 'cursor';
   if (filename.includes('opencode')) return 'opencode-go';
   if (filename.includes('grok') || filename.includes('xai')) return 'grok';
-  if (filename.includes('commandcode') || filename.includes('command-code')) return 'commandcode';
+  if (filename.includes('commandcode') || filename.includes('command-code') || filename.includes('command code')) return 'commandcode';
 
   const provider = (file?.provider || '').toLowerCase();
   if (provider.includes('antigravity')) return 'antigravity';
@@ -37,7 +37,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (provider.includes('cursor')) return 'cursor';
   if (provider.includes('opencode')) return 'opencode-go';
   if (provider.includes('grok') || provider.includes('xai')) return 'grok';
-  if (provider.includes('commandcode') || provider.includes('command-code')) return 'commandcode';
+  if (provider.includes('commandcode') || provider.includes('command-code') || provider.includes('command code')) return 'commandcode';
 
   return 'unknown';
 }
@@ -47,7 +47,7 @@ function formatFilename(name: string): string {
 }
 
 const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
-  antigravity: { path: '/antigravity/antigravity.png', needsInvert: false },
+  antigravity: { path: '/antigravity/antigravity.svg', needsInvert: true },
   codex: { path: '/openai/openai.png', needsInvert: false },
   'gemini-cli': { path: '/gemini/gemini.png', needsInvert: false },
   kiro: { path: '/kiro/kiro.png', needsInvert: false },
@@ -79,8 +79,8 @@ export function useQuotaPresenter() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<string>('antigravity');
-  const [viewMode, setViewMode] = useState<'list' | 'card'>('list');
-  const [isPrivacyMode, setIsPrivacyMode] = useState(true);
+  const [viewMode, setViewMode] = useState<'list' | 'card'>('card');
+  const [isPrivacyMode, setIsPrivacyMode] = useState(false);
 
   const fetchQuotaForFile = useCallback(async (fileId: string, providedFile?: AuthFile) => {
     let targetProvider: string | undefined;
