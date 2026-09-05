@@ -2,10 +2,8 @@ import { apiCallApi, getApiCallErrorMessage } from './apiCall';
 import {
   ANTIGRAVITY_QUOTA_URLS,
   ANTIGRAVITY_SUMMARY_URLS,
-  GEMINI_CLI_QUOTA_URL,
   CODEX_USAGE_URL,
   ANTIGRAVITY_HEADERS,
-  GEMINI_CLI_HEADERS,
   CODEX_HEADERS,
   KIRO_USAGE_URL,
   KIRO_HEADERS,
@@ -19,7 +17,6 @@ import {
 import type {
   AntigravityQuotaResult,
   CodexQuotaResult,
-  GeminiCliQuotaResult,
   KiroQuotaResult,
   CopilotQuotaResult,
   ClaudeQuotaResult,
@@ -29,7 +26,6 @@ import {
   parseAntigravityModels,
   parseAntigravitySummary,
   parseCodexUsage,
-  parseGeminiCliQuota,
   parseKiroQuota,
   parseCopilotQuota,
   parseClaudeUsage,
@@ -154,26 +150,6 @@ export const quotaApi = {
       return { limits: [], error: formatQuotaError(result) };
     } catch (err) {
       return { limits: [], error: (err as Error).message };
-    }
-  },
-
-  async fetchGeminiCli(authIndex: string, projectId: string): Promise<GeminiCliQuotaResult> {
-    try {
-      const result = await apiCallApi.request({
-        authIndex,
-        method: 'POST',
-        url: GEMINI_CLI_QUOTA_URL,
-        header: { ...GEMINI_CLI_HEADERS },
-        data: JSON.stringify({ project: projectId })
-      });
-
-      if (result.statusCode >= 200 && result.statusCode < 300) {
-        return parseGeminiCliQuota(result.body);
-      }
-
-      return { buckets: [], error: formatQuotaError(result) };
-    } catch (err) {
-      return { buckets: [], error: (err as Error).message };
     }
   },
 

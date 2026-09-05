@@ -13,7 +13,7 @@ export const oauthApi = {
     if (WEBUI_SUPPORTED.includes(provider)) {
       params.is_webui = true;
     }
-    if (provider === 'gemini-cli' && options?.projectId) {
+    if (options?.projectId) {
       params.project_id = options.projectId;
     }
     const endpointProvider = AUTH_URL_PROVIDER_MAP[provider] ?? provider;

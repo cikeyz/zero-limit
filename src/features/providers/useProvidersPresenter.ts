@@ -71,11 +71,10 @@ export function formatName(name: string | undefined | null): string {
 export function getProviderIconInfo(providerId: string): { path: string; needsInvert: boolean } {
   const id = providerId.toLowerCase();
   if (id.includes('antigravity')) return { path: '/antigravity/antigravity.svg', needsInvert: true };
-  if (id.includes('claude') || id.includes('anthropic')) return { path: '/claude/claude.png', needsInvert: false };
-  if (id.includes('gemini')) return { path: '/gemini/gemini.png', needsInvert: false };
+  if (id.includes('claude') || id.includes('anthropic')) return { path: '/claude/claude.svg', needsInvert: true };
   if (id.includes('opencode-go') || id.includes('opencode go')) return { path: '/opencode-go/opencode-go.svg', needsInvert: true };
   if (id.includes('codex') || id.includes('openai')) return { path: '/openai/openai.svg', needsInvert: true };
-  if (id.includes('kiro')) return { path: '/kiro/kiro.png', needsInvert: false };
+  if (id.includes('kiro')) return { path: '/kiro/kiro.svg', needsInvert: true };
   if (id.includes('copilot') || id.includes('github')) return { path: '/copilot/copilot.png', needsInvert: true };
   if (id.includes('cursor')) return { path: '/cursor/cursor.svg', needsInvert: true };
   if (id.includes('commandcode') || id.includes('command-code') || id.includes('command code')) {
@@ -117,15 +116,14 @@ export function useProvidersPresenter() {
 
   const [expandedProviders, setExpandedProviders] = useState<Record<string, boolean>>({
     antigravity: false,
-    codex: false,
-    'gemini-cli': false,
-    kiro: false,
-    copilot: false,
     anthropic: false,
-    cursor: false,
-    grok: false,
-    'opencode-go': false,
+    codex: false,
     commandcode: false,
+    cursor: false,
+    copilot: false,
+    grok: false,
+    kiro: false,
+    'opencode-go': false,
     other: false
   });
 
@@ -141,15 +139,14 @@ export function useProvidersPresenter() {
   const groupedFiles = useMemo(() => {
     const groups: Record<string, { displayName: string; files: AuthFile[]; iconInfo: { path: string; needsInvert: boolean } }> = {
       antigravity: { displayName: 'Antigravity', files: [], iconInfo: { path: '/antigravity/antigravity.svg', needsInvert: true } },
+      anthropic: { displayName: 'Claude', files: [], iconInfo: { path: '/claude/claude.svg', needsInvert: true } },
       codex: { displayName: 'Codex', files: [], iconInfo: { path: '/openai/openai.svg', needsInvert: true } },
-      'gemini-cli': { displayName: 'Gemini CLI', files: [], iconInfo: { path: '/gemini/gemini.png', needsInvert: false } },
-      kiro: { displayName: 'Kiro (CodeWhisperer)', files: [], iconInfo: { path: '/kiro/kiro.png', needsInvert: false } },
-      copilot: { displayName: 'GitHub Copilot', files: [], iconInfo: { path: '/copilot/copilot.png', needsInvert: true } },
-      anthropic: { displayName: 'Claude (Anthropic)', files: [], iconInfo: { path: '/claude/claude.png', needsInvert: false } },
-      cursor: { displayName: 'Cursor', files: [], iconInfo: { path: '/cursor/cursor.svg', needsInvert: true } },
-      grok: { displayName: 'Grok', files: [], iconInfo: { path: '/grok/grok.svg', needsInvert: true } },
-      'opencode-go': { displayName: 'OpenCode Go', files: [], iconInfo: { path: '/opencode-go/opencode-go.svg', needsInvert: true } },
       commandcode: { displayName: 'Command Code', files: [], iconInfo: { path: '/commandcode/commandcode.svg', needsInvert: false } },
+      cursor: { displayName: 'Cursor', files: [], iconInfo: { path: '/cursor/cursor.svg', needsInvert: true } },
+      copilot: { displayName: 'GitHub Copilot', files: [], iconInfo: { path: '/copilot/copilot.png', needsInvert: true } },
+      grok: { displayName: 'Grok', files: [], iconInfo: { path: '/grok/grok.svg', needsInvert: true } },
+      kiro: { displayName: 'Kiro', files: [], iconInfo: { path: '/kiro/kiro.svg', needsInvert: true } },
+      'opencode-go': { displayName: 'OpenCode Go', files: [], iconInfo: { path: '/opencode-go/opencode-go.svg', needsInvert: true } },
       other: { displayName: 'Other', files: [], iconInfo: { path: '', needsInvert: false } }
     };
 
@@ -157,7 +154,6 @@ export function useProvidersPresenter() {
       const p = (file.provider || file.filename || '').toLowerCase();
       if (p.includes('antigravity')) groups.antigravity.files.push(file);
       else if (p.includes('codex') || p.includes('openai')) groups.codex.files.push(file);
-      else if (p.includes('gemini')) groups['gemini-cli'].files.push(file);
       else if (p.includes('kiro')) groups.kiro.files.push(file);
       else if (p.includes('copilot') || p.includes('github')) groups.copilot.files.push(file);
       else if (p.includes('claude') || p.includes('anthropic')) groups.anthropic.files.push(file);

@@ -160,33 +160,6 @@ export function resolveCodexPlanType(file: AuthFile): string | null {
   return null;
 }
 
-export function extractGeminiCliProjectId(value: unknown): string | null {
-  if (typeof value !== 'string') return null;
-  const matches = Array.from(value.matchAll(/\(([^()]+)\)/g));
-  if (matches.length === 0) return null;
-  const candidate = matches[matches.length - 1]?.[1]?.trim();
-  return candidate ? candidate : null;
-}
-
-export function resolveGeminiCliProjectId(file: AuthFile): string | null {
-  const metadata = file.metadata;
-  const attributes = file.attributes;
-
-  const candidates = [
-    file.account,
-    file['account'],
-    metadata?.account,
-    attributes?.account
-  ];
-
-  for (const candidate of candidates) {
-    const projectId = extractGeminiCliProjectId(candidate);
-    if (projectId) return projectId;
-  }
-
-  return null;
-}
-
 // --- Legacy Parsers & Formatters (Ported) ---
 
 export interface CodexUsageWindow {
@@ -209,11 +182,6 @@ export interface CodexUsagePayload {
   codeReviewRateLimit?: Record<string, CodexUsageWindow | boolean | undefined>;
   plan_type?: string;
   planType?: string;
-  [key: string]: unknown;
-}
-
-export interface GeminiCliQuotaPayload {
-  buckets?: Array<Record<string, unknown>>;
   [key: string]: unknown;
 }
 
@@ -255,24 +223,6 @@ export function parseCodexUsagePayload(payload: unknown): CodexUsagePayload | nu
   }
   return null;
 }
-
-export function parseGeminiCliQuotaPayload(payload: unknown): GeminiCliQuotaPayload | null {
-  if (payload === undefined || payload === null) return null;
-  if (typeof payload === 'string') {
-    const trimmed = payload.trim();
-    if (!trimmed) return null;
-    try {
-      return JSON.parse(trimmed) as GeminiCliQuotaPayload;
-    } catch {
-      return null;
-    }
-  }
-  if (typeof payload === 'object') {
-    return payload as GeminiCliQuotaPayload;
-  }
-  return null;
-}
-
 
 export function formatTimeUntil(targetTime: number | string): string {
   let targetMs: number;

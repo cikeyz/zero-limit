@@ -128,11 +128,9 @@ export function parseAntigravitySummary(body: unknown): QuotaModel[] {
     if (!entry || typeof entry !== 'object') continue;
     const group = entry as Record<string, unknown>;
     const display = typeof group.displayName === 'string' ? group.displayName : '';
-    const short = display.toLowerCase().includes('claude') || display.toLowerCase().includes('gpt')
-      ? 'Claude/GPT'
-      : display.toLowerCase().includes('gemini')
-        ? 'Gemini'
-        : display.trim();
+    const isClaude = display.toLowerCase().includes('claude') || display.toLowerCase().includes('gpt');
+    const isGemini = display.toLowerCase().includes('gemini');
+    const short = isClaude ? 'Claude' : isGemini ? 'Gemini' : display.trim();
     if (!short) continue;
 
     const buckets = group.buckets;
@@ -143,7 +141,8 @@ export function parseAntigravitySummary(body: unknown): QuotaModel[] {
       const fraction = bucket.remainingFraction ?? bucket.remaining_fraction;
       if (typeof fraction !== 'number' || !Number.isFinite(fraction)) continue;
       const window = typeof bucket.window === 'string' ? bucket.window.toLowerCase() : '';
-      const label = window.includes('week')
+      const isWeekly = window.includes('week');
+      const label = isWeekly
         ? 'Weekly'
         : window.includes('5h') || window.includes('5-h') || window.includes('hour')
           ? '5-hour'
@@ -154,8 +153,11 @@ export function parseAntigravitySummary(body: unknown): QuotaModel[] {
         percentage: clampPct((1 - fraction) * 100),
         resetTime: typeof reset === 'string' && reset ? formatTimeUntil(reset) : undefined,
         used: true,
+        // Gemini pools first, then Claude; 5-hour before Weekly inside each.
+        sortOrder: (isGemini ? 0 : 10) + (isWeekly ? 2 : 1),
       });
     }
   }
+  models.sort((a, b) => (a.sortOrder ?? 99) - (b.sortOrder ?? 99));
   return models;
 }

@@ -30,11 +30,6 @@ export interface CodexQuotaResult {
   error?: string;
 }
 
-export interface GeminiCliQuotaResult {
-  buckets: Array<{ modelId: string; percentage: number; resetTime?: string; used?: boolean }>;
-  error?: string;
-}
-
 export interface KiroQuotaResult {
   models: QuotaModel[];
   plan?: string;

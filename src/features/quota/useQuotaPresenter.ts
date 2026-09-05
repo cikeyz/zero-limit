@@ -4,7 +4,7 @@ import { authFilesApi } from '@/services/api/auth.service';
 import { quotaApi } from '@/services/api/quota.service';
 import type { AuthFile, FileQuota, ProviderSection } from '@/types';
 import type { ProviderFilterItem } from '@/features/quota/components/ProviderFilter';
-import { resolveCodexChatgptAccountId, resolveCodexPlanType, resolveGeminiCliProjectId } from '@/shared/utils/quota.helpers';
+import { resolveCodexChatgptAccountId, resolveCodexPlanType } from '@/shared/utils/quota.helpers';
 import { useOpenCodeGoStore } from '@/features/providers/opencodeGo.store';
 import { opencodeGoApi } from '@/services/api/opencodeGo.service';
 import { useXaiStore } from '@/features/providers/xai.store';
@@ -13,12 +13,11 @@ import { grokCliApi } from '@/services/api/grokCli.service';
 import { useCommandCodeStore } from '@/features/providers/commandcode.store';
 import { commandcodeApi } from '@/services/api/commandcode.service';
 
-function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'opencode-go' | 'grok' | 'commandcode' | 'unknown' {
+function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'opencode-go' | 'grok' | 'commandcode' | 'unknown' {
   const filename = (file?.filename || file?.id || '').toLowerCase();
 
   if (filename.startsWith('antigravity-') || filename.includes('antigravity')) return 'antigravity';
   if (filename.startsWith('codex-') || filename.includes('codex')) return 'codex';
-  if (filename.startsWith('gemini-cli-') || filename.includes('gemini')) return 'gemini-cli';
   if (filename.startsWith('kiro-') || filename.includes('kiro')) return 'kiro';
   if (filename.startsWith('github-copilot-') || filename.includes('copilot')) return 'copilot';
   if (filename.startsWith('claude-') || filename.includes('claude') || filename.includes('anthropic')) return 'anthropic';
@@ -30,7 +29,6 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   const provider = (file?.provider || '').toLowerCase();
   if (provider.includes('antigravity')) return 'antigravity';
   if (provider.includes('codex')) return 'codex';
-  if (provider.includes('gemini')) return 'gemini-cli';
   if (provider.includes('kiro')) return 'kiro';
   if (provider.includes('copilot') || provider.includes('github')) return 'copilot';
   if (provider.includes('claude') || provider.includes('anthropic')) return 'anthropic';
@@ -49,10 +47,9 @@ function formatFilename(name: string): string {
 const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
   antigravity: { path: '/antigravity/antigravity.svg', needsInvert: true },
   codex: { path: '/openai/openai.svg', needsInvert: true },
-  'gemini-cli': { path: '/gemini/gemini.png', needsInvert: false },
-  kiro: { path: '/kiro/kiro.png', needsInvert: false },
+  kiro: { path: '/kiro/kiro.svg', needsInvert: true },
   copilot: { path: '/copilot/copilot.png', needsInvert: true },
-  anthropic: { path: '/claude/claude.png', needsInvert: false },
+  anthropic: { path: '/claude/claude.svg', needsInvert: true },
   cursor: { path: '/cursor/cursor.svg', needsInvert: true },
   'opencode-go': { path: '/opencode-go/opencode-go.svg', needsInvert: true },
   grok: { path: '/grok/grok.svg', needsInvert: true },
@@ -61,14 +58,13 @@ const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
 
 const PROVIDER_DISPLAY: { key: string; name: string }[] = [
   { key: 'antigravity', name: 'Antigravity' },
-  { key: 'anthropic', name: 'Claude (Anthropic)' },
+  { key: 'anthropic', name: 'Claude' },
   { key: 'codex', name: 'Codex' },
   { key: 'commandcode', name: 'Command Code' },
   { key: 'cursor', name: 'Cursor' },
-  { key: 'gemini-cli', name: 'Gemini CLI' },
   { key: 'copilot', name: 'GitHub Copilot' },
   { key: 'grok', name: 'Grok' },
-  { key: 'kiro', name: 'Kiro (CodeWhisperer)' },
+  { key: 'kiro', name: 'Kiro' },
   { key: 'opencode-go', name: 'OpenCode Go' },
   { key: 'unknown', name: 'Other' },
 ];
@@ -156,23 +152,6 @@ export function useQuotaPresenter() {
           ...s,
           files: s.files.map(f => f.fileId === fileId ? {
             ...f, loading: false, plan, limits: result.limits, error: result.error
-          } : f)
-        } : s));
-
-      } else if (targetProvider === 'gemini-cli') {
-        const projectId = resolveGeminiCliProjectId(file);
-        if (!projectId) throw new Error('Project ID not found in file');
-        const result = await quotaApi.fetchGeminiCli(authIndex, projectId);
-
-        setSections((prev) => prev.map(s => s.provider === 'gemini-cli' ? {
-          ...s,
-          files: s.files.map(f => f.fileId === fileId ? {
-            ...f,
-            loading: false,
-            models: result.buckets.map(b => ({
-              name: b.modelId, percentage: b.percentage, resetTime: b.resetTime, used: b.used ?? true
-            })),
-            error: result.error
           } : f)
         } : s));
 
@@ -264,7 +243,7 @@ export function useQuotaPresenter() {
       const files: AuthFile[] = Array.isArray(resp) ? resp : (resp as any).items || (resp as any).files || [];
 
       const grouped: Record<string, FileQuota[]> = {
-        antigravity: [], codex: [], 'gemini-cli': [], kiro: [], copilot: [], anthropic: [], cursor: [], unknown: []
+        antigravity: [], codex: [], kiro: [], copilot: [], anthropic: [], cursor: [], unknown: []
       };
 
       files.forEach((file) => {

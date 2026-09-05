@@ -55,7 +55,7 @@ export function ProviderQuotaCard({
       let icon: string | undefined;
 
       if (lowerName.includes('claude')) {
-        icon = '/claude/claude.png';
+        icon = '/claude/claude.svg';
       } else if (lowerName.includes('gemini')) {
         icon = '/gemini/gemini.png';
       } else if (lowerName.includes('gpt') || lowerName.includes('o1')) {
@@ -66,7 +66,7 @@ export function ProviderQuotaCard({
         } else if (lowerProvider.includes('codex')) {
           icon = '/openai/openai.svg';
         } else if (lowerProvider.includes('kiro')) {
-          icon = '/kiro/kiro.png';
+          icon = '/kiro/kiro.svg';
         } else if (lowerProvider.includes('copilot') || lowerProvider.includes('github')) {
           icon = '/copilot/copilot.png';
         } else if (lowerProvider.includes('cursor')) {
@@ -82,7 +82,7 @@ export function ProviderQuotaCard({
         }
       }
 
-      const needsInvert = ['/copilot/copilot.png', '/cursor/cursor.svg', '/opencode-go/opencode-go.svg', '/grok/grok.svg', '/antigravity/antigravity.svg', '/openai/openai.svg'].includes(icon);
+      const needsInvert = ['/copilot/copilot.png', '/cursor/cursor.svg', '/opencode-go/opencode-go.svg', '/grok/grok.svg', '/antigravity/antigravity.svg', '/openai/openai.svg', '/claude/claude.svg', '/kiro/kiro.svg'].includes(icon);
       return { icon, needsInvert };
     };
 

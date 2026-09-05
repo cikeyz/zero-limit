@@ -15,7 +15,6 @@ export const ANTIGRAVITY_SUMMARY_URLS = [
   'https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary'
 ];
 
-export const GEMINI_CLI_QUOTA_URL = 'https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota';
 export const CODEX_USAGE_URL = 'https://chatgpt.com/backend-api/wham/usage';
 export const KIRO_USAGE_URL = 'https://codewhisperer.us-east-1.amazonaws.com/getUsageLimits?isEmailRequired=true&origin=AI_EDITOR&resourceType=AGENTIC_REQUEST';
 export const COPILOT_ENTITLEMENT_URL = 'https://api.github.com/copilot_internal/user';
@@ -26,11 +25,6 @@ export const ANTIGRAVITY_HEADERS: Record<string, string> = {
   Authorization: 'Bearer $TOKEN$',
   'Content-Type': 'application/json',
   'User-Agent': 'antigravity/1.11.5 windows/amd64'
-};
-
-export const GEMINI_CLI_HEADERS: Record<string, string> = {
-  Authorization: 'Bearer $TOKEN$',
-  'Content-Type': 'application/json'
 };
 
 export const CODEX_HEADERS: Record<string, string> = {

@@ -47,7 +47,7 @@ export function maskFolder(filename: string): string {
       return '******' + domainPart;
   });
 
-  const prefixes = ['antigravity-', 'codex-', 'gemini-cli-', 'anthropic-', 'gemini-'];
+  const prefixes = ['antigravity-', 'codex-', 'anthropic-', 'gemini-'];
 
   for (const prefix of prefixes) {
     if (processed.toLowerCase().startsWith(prefix)) {
