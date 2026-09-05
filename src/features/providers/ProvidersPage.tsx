@@ -56,12 +56,14 @@ import { OpenCodeGoCard } from '@/features/providers/OpenCodeGoCard';
 import { GrokCard } from '@/features/providers/GrokCard';
 import { CommandCodeCard } from '@/features/providers/CommandCodeCard';
 import { accountLabelKey, useAccountLabelsStore } from '@/features/providers/accountLabels.store';
+import { healthLabel, useFileHealthStore } from '@/features/quota/fileHealth.store';
 
 export function ProvidersPage() {
   const { t } = useTranslation();
   const [manualOpen, setManualOpen] = useState(false);
   const [editingLabel, setEditingLabel] = useState<{ id: string; draft: string } | null>(null);
   const { labels, setLabel } = useAccountLabelsStore();
+  const fileHealth = useFileHealthStore((s) => s.map);
   const {
     isAuthenticated,
     isNonPlusServer,
@@ -382,11 +384,17 @@ export function ProvidersPage() {
                                       ) : (
                                         <div className="font-medium text-sm text-foreground">{displayName}</div>
                                       )}
-                                     <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                       <span>{file.provider}</span>
-                                       <span className="text-[10px]">•</span>
-                                       <span>{t('providers.active')}</span>
-                                     </div>
+                                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                      <span>{file.provider}</span>
+                                      <span className="text-[10px]">•</span>
+                                      {(() => {
+                                        const health = fileHealth[file.id || ''];
+                                        if (health?.status === 'error') {
+                                          return <span className="text-destructive font-medium">{healthLabel(health.message)}</span>;
+                                        }
+                                        return <span>{t('providers.active')}</span>;
+                                      })()}
+                                    </div>
                                    </div>
                                  </div>
 

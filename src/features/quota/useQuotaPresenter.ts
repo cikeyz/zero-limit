@@ -11,6 +11,7 @@ import { useXaiStore } from '@/features/providers/xai.store';
 import { xaiApi } from '@/services/api/xai.service';
 import { grokCliApi } from '@/services/api/grokCli.service';
 import { accountLabelKey, useAccountLabelsStore } from '@/features/providers/accountLabels.store';
+import { useFileHealthStore } from '@/features/quota/fileHealth.store';
 import { useCommandCodeStore } from '@/features/providers/commandcode.store';
 import { commandcodeApi } from '@/services/api/commandcode.service';
 
@@ -373,6 +374,22 @@ export function useQuotaPresenter() {
   const togglePrivacyMode = useCallback(() => {
     setIsPrivacyMode(prev => !prev);
   }, []);
+
+  // Publish per-file quota outcomes so the Providers page can show
+  // live token state (ok / error) instead of a static "Active".
+  useEffect(() => {
+    const setHealth = useFileHealthStore.getState().setHealth;
+    for (const section of sections) {
+      for (const f of section.files) {
+        if (f.loading) continue;
+        if (f.error) {
+          setHealth(f.fileId, { status: 'error', message: f.error });
+        } else if ((f.models && f.models.length > 0) || (f.limits && f.limits.length > 0)) {
+          setHealth(f.fileId, { status: 'ok' });
+        }
+      }
+    }
+  }, [sections]);
 
   const reload = useCallback(() => {
     loadAuthFiles();
