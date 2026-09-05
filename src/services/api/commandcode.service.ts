@@ -52,7 +52,7 @@ export function parseCommandCodeQuota(
   const inner = cred?.credits as Record<string, unknown> | undefined;
   const monthlySource = inner && typeof inner === 'object' ? inner : cred;
 
-  const pushWindow = (name: string, raw: unknown) => {
+  const pushWindow = (name: string, raw: unknown, sortOrder: number) => {
     const w = readWindow(raw);
     if (!w || w.used === null || w.cap === null || w.cap <= 0) return;
     models.push({
@@ -60,12 +60,13 @@ export function parseCommandCodeQuota(
       percentage: clampPct((w.used / w.cap) * 100),
       resetTime: w.resetAt !== null ? formatTimeUntil(w.resetAt) : undefined,
       used: true,
+      sortOrder,
     });
   };
 
   if (cred && limited && windows) {
-    pushWindow('5-hour window', windows.fiveHour);
-    pushWindow('Weekly window', windows.weekly);
+    pushWindow('5-hour window', windows.fiveHour, 1);
+    pushWindow('Weekly window', windows.weekly, 2);
   }
 
   const monthly = normalizeNumberValue(monthlySource?.monthlyCredits);
@@ -86,6 +87,7 @@ export function parseCommandCodeQuota(
         displayValue: `$${monthly.toFixed(2)} remaining · $${billed.toFixed(2)} billed`,
         resetTime: monthlyReset,
         used: true,
+        sortOrder: 3,
       });
     } else {
       models.push({
@@ -94,6 +96,7 @@ export function parseCommandCodeQuota(
         displayValue: `$${monthly.toFixed(2)} remaining`,
         resetTime: monthlyReset,
         used: true,
+        sortOrder: 3,
       });
     }
     const totalTokens = normalizeNumberValue(sum?.totalTokens);
@@ -107,6 +110,7 @@ export function parseCommandCodeQuota(
         resetTime: monthlyReset,
         used: true,
         separate: true,
+        sortOrder: 4,
       });
     }
   }

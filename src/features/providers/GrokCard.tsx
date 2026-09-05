@@ -19,7 +19,7 @@ import { isTauri } from '@/services/tauri';
  */
 export function GrokCard() {
   const { t } = useTranslation();
-  const { apiKey, setApiKey, clearApiKey, cliKey, cliRefresh, setCliSession, clearCliSession } = useXaiStore();
+  const { apiKey, setApiKey, clearApiKey, cliKey, cliRefresh, setCliSession, clearCliSession, label, setLabel } = useXaiStore();
   const [keyInput, setKeyInput] = useState('');
   const [cliKeyInput, setCliKeyInput] = useState('');
   const [cliRefreshInput, setCliRefreshInput] = useState('');
@@ -131,6 +131,11 @@ export function GrokCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        <Input
+          placeholder={t('grok.labelPlaceholder', 'Display name (optional)')}
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         <div className="space-y-3">

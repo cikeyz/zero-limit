@@ -6,17 +6,21 @@ const STORAGE_KEY_COMMANDCODE = 'commandcode-credentials';
 
 interface CommandCodeState {
   apiKey: string;
+  label: string;
   setApiKey: (apiKey: string) => void;
   clearApiKey: () => void;
+  setLabel: (label: string) => void;
 }
 
 export const useCommandCodeStore = create<CommandCodeState>()(
   persist(
     (set) => ({
       apiKey: '',
+      label: '',
 
       setApiKey: (apiKey) => set({ apiKey }),
-      clearApiKey: () => set({ apiKey: '' }),
+      clearApiKey: () => set({ apiKey: '', label: '' }),
+      setLabel: (label) => set({ label }),
     }),
     {
       name: STORAGE_KEY_COMMANDCODE,
@@ -34,6 +38,7 @@ export const useCommandCodeStore = create<CommandCodeState>()(
       })),
       partialize: (state) => ({
         apiKey: state.apiKey,
+        label: state.label,
       }),
     }
   )

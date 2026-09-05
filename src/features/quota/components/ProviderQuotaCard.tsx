@@ -115,6 +115,7 @@ export function ProviderQuotaCard({
       const avg = Math.round(total / groupItems.length);
       const resetTime = groupItems.find(i => i.resetTime)?.resetTime;
       const used = groupItems.some(i => i.used);
+      const sortOrder = groupItems.reduce((min, i) => Math.min(min, i.sortOrder ?? 99), 99);
       const { icon, needsInvert } = resolveIcon(name);
 
       return {
@@ -123,10 +124,11 @@ export function ProviderQuotaCard({
         used,
         items: groupItems,
         resetTime,
+        sortOrder,
         icon,
         needsInvert
       };
-    }).sort((a, b) => a.name.localeCompare(b.name));
+    }).sort((a, b) => (a.sortOrder - b.sortOrder) || a.name.localeCompare(b.name));
 
     for (const item of standalone) {
       const { icon, needsInvert } = resolveIcon(item.name);

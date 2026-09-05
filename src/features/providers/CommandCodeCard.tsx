@@ -15,7 +15,7 @@ import { notifyAccountsChanged } from '@/features/providers/opencodeGo.store';
  */
 export function CommandCodeCard() {
   const { t } = useTranslation();
-  const { apiKey, setApiKey, clearApiKey } = useCommandCodeStore();
+  const { apiKey, setApiKey, clearApiKey, label, setLabel } = useCommandCodeStore();
   const [keyInput, setKeyInput] = useState('');
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -69,6 +69,11 @@ export function CommandCodeCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
+        <Input
+          placeholder={t('commandcode.labelPlaceholder', 'Display name (optional)')}
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
         {error && <p className="text-sm text-destructive">{error}</p>}
         {connected ? (
           <Button variant="outline" className="w-full" onClick={handleDisconnect}>

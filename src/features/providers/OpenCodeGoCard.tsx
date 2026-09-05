@@ -18,7 +18,7 @@ type Checking = 'auto' | 'manual' | null;
  */
 export function OpenCodeGoCard() {
   const { t } = useTranslation();
-  const { apiKey, workspaceId, authCookie, setApiKey, setCredentials, clearCredentials } = useOpenCodeGoStore();
+  const { apiKey, workspaceId, authCookie, label, setApiKey, setCredentials, clearCredentials, setLabel } = useOpenCodeGoStore();
   const [widInput, setWidInput] = useState(workspaceId);
   const [cookieInput, setCookieInput] = useState('');
   const [checking, setChecking] = useState<Checking>(null);
@@ -106,6 +106,11 @@ export function OpenCodeGoCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
+        <Input
+          placeholder={t('opencodeGo.labelPlaceholder', 'Display name (optional)')}
+          value={label}
+          onChange={(e) => setLabel(e.target.value)}
+        />
         {error && <p className="text-sm text-destructive">{error}</p>}
         {connected ? (
           <Button variant="outline" className="w-full" onClick={handleDisconnect}>

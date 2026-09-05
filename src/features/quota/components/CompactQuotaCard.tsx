@@ -76,9 +76,10 @@ export function CompactQuotaCard({
       const total = groupItems.reduce((sum, i) => sum + i.percentage, 0);
       const avg = Math.round(total / groupItems.length);
       const resetTime = groupItems.find(i => i.resetTime)?.resetTime;
+      const sortOrder = groupItems.reduce((min, i) => Math.min(min, i.sortOrder ?? 99), 99);
 
-      return { name, percentage: avg, used: groupItems.some(i => i.used), resetTime, items: groupItems };
-    }).sort((a, b) => a.name.localeCompare(b.name));
+      return { name, percentage: avg, used: groupItems.some(i => i.used), resetTime, sortOrder, items: groupItems };
+    }).sort((a, b) => (a.sortOrder - b.sortOrder) || a.name.localeCompare(b.name));
   }, [items]);
 
   const getProgressColor = (pct: number) => {

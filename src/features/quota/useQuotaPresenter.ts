@@ -293,10 +293,11 @@ export function useQuotaPresenter() {
       if (goConnected) {
         const goFile: FileQuota = {
           fileId: 'opencode-go',
-          filename: 'OpenCode Go',
+          filename: (useOpenCodeGoStore.getState().label || '').trim() || 'OpenCode Go',
           provider: 'OpenCode Go',
           providerKey: 'opencode-go',
           loading: false,
+          email: (useOpenCodeGoStore.getState().label || '').trim() || goWorkspaceId || undefined,
         };
         setSections((prev) => prev.map((s) => (s.provider === 'opencode-go' ? { ...s, files: [goFile] } : s)));
       }
@@ -306,10 +307,11 @@ export function useQuotaPresenter() {
       if (grokConnected) {
         const grokFile: FileQuota = {
           fileId: 'grok',
-          filename: 'Grok',
+          filename: (useXaiStore.getState().label || '').trim() || 'Grok',
           provider: 'Grok',
           providerKey: 'grok',
           loading: false,
+          email: (useXaiStore.getState().label || '').trim() || undefined,
         };
         setSections((prev) => prev.map((s) => (s.provider === 'grok' ? { ...s, files: [grokFile] } : s)));
       }
@@ -319,10 +321,11 @@ export function useQuotaPresenter() {
       if (commandcodeConnected) {
         const ccFile: FileQuota = {
           fileId: 'commandcode',
-          filename: 'Command Code',
+          filename: (useCommandCodeStore.getState().label || '').trim() || 'Command Code',
           provider: 'Command Code',
           providerKey: 'commandcode',
           loading: false,
+          email: (useCommandCodeStore.getState().label || '').trim() || undefined,
         };
         setSections((prev) => prev.map((s) => (s.provider === 'commandcode' ? { ...s, files: [ccFile] } : s)));
       }

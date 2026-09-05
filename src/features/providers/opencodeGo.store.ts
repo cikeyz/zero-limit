@@ -7,8 +7,10 @@ interface OpenCodeGoState {
   apiKey: string;
   workspaceId: string;
   authCookie: string;
+  label: string;
   setApiKey: (apiKey: string) => void;
   setCredentials: (workspaceId: string, authCookie: string) => void;
+  setLabel: (label: string) => void;
   clearCredentials: () => void;
 }
 
@@ -18,10 +20,12 @@ export const useOpenCodeGoStore = create<OpenCodeGoState>()(
       apiKey: '',
       workspaceId: '',
       authCookie: '',
+      label: '',
 
       setApiKey: (apiKey) => set({ apiKey }),
       setCredentials: (workspaceId, authCookie) => set({ workspaceId, authCookie }),
-      clearCredentials: () => set({ apiKey: '', workspaceId: '', authCookie: '' }),
+      setLabel: (label) => set({ label }),
+      clearCredentials: () => set({ apiKey: '', workspaceId: '', authCookie: '', label: '' }),
     }),
     {
       name: STORAGE_KEY_OPENCODE_GO,
@@ -41,6 +45,7 @@ export const useOpenCodeGoStore = create<OpenCodeGoState>()(
         apiKey: state.apiKey,
         workspaceId: state.workspaceId,
         authCookie: state.authCookie,
+        label: state.label,
       }),
     }
   )

@@ -68,7 +68,7 @@ interface OfficialWindow {
   resetsAt?: unknown;
 }
 
-function officialModel(name: string, window: OfficialWindow | undefined): QuotaModel | null {  if (!window || typeof window !== 'object') return null;
+function officialModel(name: string, window: OfficialWindow | undefined, sortOrder: number): QuotaModel | null {  if (!window || typeof window !== 'object') return null;
   // `status` is "ok" normally and "rate-limited" at 100%: both are valid
   // meters (the dashboard renders rate-limited as 100%), so only reject
   // unknown status values, never a known one. `percent` is a server-floored
@@ -83,6 +83,7 @@ function officialModel(name: string, window: OfficialWindow | undefined): QuotaM
     percentage: Math.min(100, Math.max(0, used)),
     resetTime: typeof resetsAt === 'string' && resetsAt ? formatTimeUntil(resetsAt) : undefined,
     used: true,
+    sortOrder,
   };
 }
 
@@ -93,8 +94,8 @@ export function parseOfficialUsage(body: unknown): OpenCodeGoQuotaResult {
     return { models: [], error: 'Unexpected OpenCode Go response shape' };
   }
   const models: QuotaModel[] = [];
-  for (const [name, key] of [['Rolling', 'rolling'], ['Weekly', 'weekly'], ['Monthly', 'monthly']] as const) {
-    const model = officialModel(name, usage[key]);
+  for (const [name, key, sortOrder] of [['Rolling', 'rolling', 1], ['Weekly', 'weekly', 2], ['Monthly', 'monthly', 3]] as const) {
+    const model = officialModel(name, usage[key], sortOrder);
     if (model) models.push(model);
   }
   if (models.length === 0) {
@@ -208,6 +209,7 @@ export function parseOpenCodeGoPage(html: string): OpenCodeGoQuotaResult {
       percentage: Math.min(100, Math.max(0, window.quotaPercent)),
       resetTime: formatTimeUntil(nowSec + window.resetInSec),
       used: true,
+      sortOrder: name === 'Rolling' ? 1 : name === 'Weekly' ? 2 : 3,
     })),
   };
 }

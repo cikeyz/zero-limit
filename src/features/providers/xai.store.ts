@@ -8,10 +8,12 @@ interface XaiState {
   apiKey: string;
   cliKey: string;
   cliRefresh: string;
+  label: string;
   setApiKey: (apiKey: string) => void;
   clearApiKey: () => void;
   setCliSession: (key: string, refresh: string) => void;
   clearCliSession: () => void;
+  setLabel: (label: string) => void;
 }
 
 export const useXaiStore = create<XaiState>()(
@@ -20,11 +22,13 @@ export const useXaiStore = create<XaiState>()(
       apiKey: '',
       cliKey: '',
       cliRefresh: '',
+      label: '',
 
       setApiKey: (apiKey) => set({ apiKey }),
       clearApiKey: () => set({ apiKey: '' }),
       setCliSession: (key, refresh) => set({ cliKey: key, cliRefresh: refresh }),
       clearCliSession: () => set({ cliKey: '', cliRefresh: '' }),
+      setLabel: (label) => set({ label }),
     }),
     {
       name: STORAGE_KEY_XAI,
@@ -44,6 +48,7 @@ export const useXaiStore = create<XaiState>()(
         apiKey: state.apiKey,
         cliKey: state.cliKey,
         cliRefresh: state.cliRefresh,
+        label: state.label,
       }),
     }
   )
