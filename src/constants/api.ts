@@ -9,6 +9,12 @@ export const ANTIGRAVITY_QUOTA_URLS = [
   'https://cloudcode-pa.googleapis.com/v1internal:fetchAvailableModels'
 ];
 
+export const ANTIGRAVITY_SUMMARY_URLS = [
+  'https://daily-cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary',
+  'https://daily-cloudcode-pa.sandbox.googleapis.com/v1internal:retrieveUserQuotaSummary',
+  'https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuotaSummary'
+];
+
 export const GEMINI_CLI_QUOTA_URL = 'https://cloudcode-pa.googleapis.com/v1internal:retrieveUserQuota';
 export const CODEX_USAGE_URL = 'https://chatgpt.com/backend-api/wham/usage';
 export const KIRO_USAGE_URL = 'https://codewhisperer.us-east-1.amazonaws.com/getUsageLimits?isEmailRequired=true&origin=AI_EDITOR&resourceType=AGENTIC_REQUEST';

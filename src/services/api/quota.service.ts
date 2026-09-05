@@ -1,6 +1,7 @@
 import { apiCallApi, getApiCallErrorMessage } from './apiCall';
 import {
   ANTIGRAVITY_QUOTA_URLS,
+  ANTIGRAVITY_SUMMARY_URLS,
   GEMINI_CLI_QUOTA_URL,
   CODEX_USAGE_URL,
   ANTIGRAVITY_HEADERS,
@@ -26,6 +27,7 @@ import type {
 } from '@/types';
 import {
   parseAntigravityModels,
+  parseAntigravitySummary,
   parseCodexUsage,
   parseGeminiCliQuota,
   parseKiroQuota,
@@ -82,6 +84,29 @@ export const quotaApi = {
 
   async fetchAntigravity(authIndex: string): Promise<AntigravityQuotaResult> {
     let lastError = '';
+
+    // Grouped weekly + 5h buckets first (what the Antigravity app renders).
+    for (const url of ANTIGRAVITY_SUMMARY_URLS) {
+      try {
+        const result = await apiCallApi.request({
+          authIndex,
+          method: 'POST',
+          url,
+          header: { ...ANTIGRAVITY_HEADERS },
+          data: '{}'
+        });
+
+        if (result.statusCode >= 200 && result.statusCode < 300) {
+          const models = parseAntigravitySummary(result.body);
+          if (models.length > 0) {
+            return { models };
+          }
+        }
+        lastError = formatQuotaError(result);
+      } catch (err) {
+        lastError = (err as Error).message;
+      }
+    }
 
     for (const url of ANTIGRAVITY_QUOTA_URLS) {
       try {

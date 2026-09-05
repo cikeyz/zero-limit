@@ -92,10 +92,11 @@ export function parseAntigravityModels(body: unknown): QuotaModel[] {
     if (id.startsWith('chat_') || id === 'tab_flash_lite_preview' || id === 'tab_jump_flash_lite_preview') return;
 
     let name = id;
-    if (id === 'rev19-uic3-1p') name = 'Gemini 2.5 Computer Use';
-    else if (id === 'gemini-3-pro-image') name = 'Gemini 3 Pro Image';
-    else if (id === 'gemini-2.5-flash-lite') name = 'Gemini 2.5 Flash Lite';
-    else if (id === 'gemini-2.5-flash') name = 'Gemini 2.5 Flash';
+    if (id === 'gemini-3.7-flash-tiered') name = 'Gemini 3.7 Flash (Tiered)';
+    else if (id === 'gemini-3.6-flash-tiered') name = 'Gemini 3.6 Flash (Tiered)';
+    else if (id === 'claude-opus-4-6-thinking') name = 'Claude Opus 4.6 (Thinking)';
+    else if (id === 'claude-sonnet-4-6') name = 'Claude Sonnet 4.6';
+    else if (id === 'gpt-oss-120b-medium') name = 'GPT-OSS 120B (Medium)';
 
     models.push({
       name,
@@ -106,4 +107,55 @@ export function parseAntigravityModels(body: unknown): QuotaModel[] {
   });
 
   return models.sort((a, b) => a.name.localeCompare(b.name));
+}
+
+function clampPct(value: number): number {
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+/**
+ * Parses POST /v1internal:retrieveUserQuotaSummary — the same grouped
+ * weekly + 5h buckets the Antigravity app itself renders
+ * (Gemini Models / Claude and GPT models × Weekly / Five Hour).
+ */
+export function parseAntigravitySummary(body: unknown): QuotaModel[] {
+  const payload = (body ?? null) as Record<string, unknown> | null;
+  const groups = payload?.groups;
+  if (!payload || typeof payload !== 'object' || !Array.isArray(groups)) return [];
+
+  const models: QuotaModel[] = [];
+  for (const entry of groups) {
+    if (!entry || typeof entry !== 'object') continue;
+    const group = entry as Record<string, unknown>;
+    const display = typeof group.displayName === 'string' ? group.displayName : '';
+    const short = display.toLowerCase().includes('claude') || display.toLowerCase().includes('gpt')
+      ? 'Claude/GPT'
+      : display.toLowerCase().includes('gemini')
+        ? 'Gemini'
+        : display.trim();
+    if (!short) continue;
+
+    const buckets = group.buckets;
+    if (!Array.isArray(buckets)) continue;
+    for (const item of buckets) {
+      if (!item || typeof item !== 'object') continue;
+      const bucket = item as Record<string, unknown>;
+      const fraction = bucket.remainingFraction ?? bucket.remaining_fraction;
+      if (typeof fraction !== 'number' || !Number.isFinite(fraction)) continue;
+      const window = typeof bucket.window === 'string' ? bucket.window.toLowerCase() : '';
+      const label = window.includes('week')
+        ? 'Weekly'
+        : window.includes('5h') || window.includes('5-h') || window.includes('hour')
+          ? '5-hour'
+          : (typeof bucket.displayName === 'string' && bucket.displayName) || window || 'Quota';
+      const reset = bucket.resetTime ?? bucket.reset_time;
+      models.push({
+        name: `${short} ${label}`,
+        percentage: clampPct((1 - fraction) * 100),
+        resetTime: typeof reset === 'string' && reset ? formatTimeUntil(reset) : undefined,
+        used: true,
+      });
+    }
+  }
+  return models;
 }
