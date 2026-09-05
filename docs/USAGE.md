@@ -20,7 +20,7 @@ The easiest way to get started. ZeroLimit will automatically download and config
 2. Select **Auto Download**
 3. Choose your version:
    - **Standard** — The original CLI Proxy API
-   - **Plus** — Enhanced version with GitHub Copilot and Kiro support
+   - **Plus** — Enhanced version with GitHub Copilot, Kiro, and Cursor support
 4. ZeroLimit will download and extract the correct binary for your OS
 5. Set a **Management Key** — this is the secret key used to protect the management API
 6. Click **Finish Setup** — the proxy starts automatically and you're logged in
@@ -43,8 +43,13 @@ If you already have CLIProxyAPI downloaded or prefer to manage it yourself:
 
 
 > [!NOTE]
-> For the Plus version with Kiro & GitHub Copilot support, download from [CLIProxyAPI Plus Releases](https://github.com/router-for-me/CLIProxyAPIPlus/releases).
+> For the Plus version with Kiro, GitHub Copilot, and Cursor support, download from CLIProxyAPI Plus Releases.
+> Note: the upstream Plus repository has been deleted, so no new Plus releases exist — keep your existing Plus binary and the in-app update check cannot fetch Plus updates.
 > For the Standard version, download from [CLIProxyAPI Releases](https://github.com/router-for-me/CLIProxyAPI/releases).
+
+### Tracking Cursor usage
+
+Cursor requires the Plus binary. Add it from the **Providers** page like any other provider (Cursor uses the proxy's `cursor-login` OAuth flow), then its plan usage appears on the **Quota** page alongside your other accounts.
 
 ---
 
