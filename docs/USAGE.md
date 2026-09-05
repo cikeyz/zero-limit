@@ -63,7 +63,9 @@ The cookie expires periodically; when quota checks start failing with an authent
 
 ### Tracking Grok (xAI) usage
 
-Grok needs no proxy account. On the **Providers** page, fill in the Grok card with an **xAI console API key** (create one with model access at `x.ai`). ZeroLimit reads credit balances from `GET /v1/api-key` plus rate-limit headers from `GET /v1/models`, shown on the **Quota** page as Credits, Requests, and Tokens. This tracks API-platform credits, not app subscription windows.
+### Tracking Grok usage
+
+The Grok card offers two methods. **Grok CLI session (free tier)**: copy `.key` and `.refresh_token` from the `auth.x.ai` entry in `~/.grok/auth.json` (created by `grok login`) into the card. ZeroLimit reads monthly/weekly usage from the CLI billing endpoints and renews the session automatically when a refresh token is saved (sessions otherwise expire after about 7 days). **xAI console API key**: create a key with model access at `x.ai` to track API-platform credit balances instead. The CLI session takes precedence when both are connected.
 
 ### Tracking Command Code usage
 

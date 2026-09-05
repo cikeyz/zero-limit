@@ -9,6 +9,7 @@ import { useOpenCodeGoStore } from '@/features/providers/opencodeGo.store';
 import { opencodeGoApi } from '@/services/api/opencodeGo.service';
 import { useXaiStore } from '@/features/providers/xai.store';
 import { xaiApi } from '@/services/api/xai.service';
+import { grokCliApi } from '@/services/api/grokCli.service';
 import { useCommandCodeStore } from '@/features/providers/commandcode.store';
 import { commandcodeApi } from '@/services/api/commandcode.service';
 
@@ -212,9 +213,13 @@ export function useQuotaPresenter() {
           } : f)
         } : s));
       } else if (targetProvider === 'grok') {
-        const { apiKey } = useXaiStore.getState();
-        if (!apiKey) throw new Error('Grok is not connected');
-        const result = await xaiApi.fetchQuota(apiKey);
+        const { apiKey, cliKey, cliRefresh, setCliSession } = useXaiStore.getState();
+        const result = cliKey
+          ? await grokCliApi.fetchQuota(cliKey, cliRefresh || undefined)
+          : await xaiApi.fetchQuota(apiKey);
+        if (cliKey && 'refreshed' in result && result.refreshed) {
+          setCliSession(result.refreshed.key, result.refreshed.refresh);
+        }
         setSections((prev) => prev.map(s => s.provider === 'grok' ? {
           ...s,
           files: s.files.map(f => f.fileId === fileId ? {
@@ -295,8 +300,8 @@ export function useQuotaPresenter() {
         ]);
       }
 
-      const { apiKey: xaiApiKey } = useXaiStore.getState();
-      const grokConnected = Boolean(xaiApiKey);
+      const { apiKey: xaiApiKey, cliKey: grokCliKey } = useXaiStore.getState();
+      const grokConnected = Boolean(xaiApiKey || grokCliKey);
       if (grokConnected) {
         setSections((prev) => [
           ...prev,
