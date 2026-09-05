@@ -1,23 +1,70 @@
 /**
  * OpenCode Go quota service.
  *
- * Fetches the Go subscription page (workspace ID + `auth` cookie) through the
- * proxy's generic /api-call passthrough (no authIndex: no token substitution,
- * custom Cookie header forwarded verbatim) and extracts the embedded usage
- * windows from the returned HTML.
+ * Primary path: the official usage API (`GET /zen/go/v1/usage`, Bearer
+ * API key from the local OpenCode `opencode-go` entry). Returns rolling,
+ * weekly, and monthly windows as percent-used with ISO reset times.
  *
- * HTML scraping approach adapted from whosydd/opencode-quota
- * (MIT License, Copyright (c) 2026 GY) — reimplemented here with local
- * parsing helpers and ZeroLimit result shaping.
+ * Fallback path: the workspace Go page (workspace ID + `auth` cookie)
+ * scraped for the same windows. HTML scraping approach adapted from
+ * whosydd/opencode-quota (MIT License, Copyright (c) 2026 GY).
  */
 
 import { apiCallApi } from './apiCall';
 import { formatTimeUntil, normalizeNumberValue } from '@/shared/utils/quota.helpers';
 import type { OpenCodeGoQuotaResult, QuotaModel } from '@/types';
 
-interface GoWindow {
-  quotaPercent: number;
-  resetInSec: number;
+const OFFICIAL_USAGE_URL = 'https://opencode.ai/zen/go/v1/usage';
+
+export interface OpenCodeGoCredentials {
+  apiKey?: string;
+  workspaceId?: string;
+  authCookie?: string;
+}
+
+/** Accepts a bare ID, a workspace URL, or a URL with a /go suffix. */
+export function extractWorkspaceId(input: string): string | null {
+  const trimmed = (input || '').trim();
+  if (!trimmed) return null;
+  const match = trimmed.match(/wrk_[A-Za-z0-9]+/);
+  if (match) return match[0];
+  const cleaned = trimmed.replace(/\/go\/?$/, '').replace(/\/+$/, '');
+  return cleaned || null;
+}
+
+interface OfficialWindow {
+  status?: unknown;
+  percent?: unknown;
+  resetsAt?: unknown;
+}
+
+function officialModel(name: string, window: OfficialWindow | undefined): QuotaModel | null {  if (!window || typeof window !== 'object') return null;
+  if (window.status !== undefined && window.status !== 'ok') return null;
+  const used = normalizeNumberValue(window.percent);
+  if (used === null) return null;
+  const resetsAt = window.resetsAt;
+  return {
+    name,
+    percentage: Math.min(100, Math.max(0, 100 - used)),
+    resetTime: typeof resetsAt === 'string' && resetsAt ? formatTimeUntil(resetsAt) : undefined,
+  };
+}
+
+export function parseOfficialUsage(body: unknown): OpenCodeGoQuotaResult {
+  const payload = (body ?? null) as Record<string, unknown> | null;
+  const usage = payload?.usage as Record<string, OfficialWindow> | undefined;
+  if (!payload || typeof payload !== 'object' || !usage || typeof usage !== 'object') {
+    return { models: [], error: 'Unexpected OpenCode Go response shape' };
+  }
+  const models: QuotaModel[] = [];
+  for (const [name, key] of [['Rolling', 'rolling'], ['Weekly', 'weekly'], ['Monthly', 'monthly']] as const) {
+    const model = officialModel(name, usage[key]);
+    if (model) models.push(model);
+  }
+  if (models.length === 0) {
+    return { models: [], error: 'No OpenCode Go windows returned' };
+  }
+  return { models };
 }
 
 function escapeRegExp(value: string): string {
@@ -89,7 +136,7 @@ function parseLooseObjectLiteral(input: string): Record<string, unknown> {
   return JSON.parse(normalized) as Record<string, unknown>;
 }
 
-function extractWindow(html: string, field: string): GoWindow | null {
+function extractWindow(html: string, field: string): { quotaPercent: number; resetInSec: number } | null {
   const literal = extractObjectLiteral(html, field);
   if (!literal) return null;
   let parsed: Record<string, unknown>;
@@ -106,29 +153,49 @@ function extractWindow(html: string, field: string): GoWindow | null {
 
 export function parseOpenCodeGoPage(html: string): OpenCodeGoQuotaResult {
   const nowSec = Math.floor(Date.now() / 1000);
-  const windows: Array<{ name: string; window: GoWindow }> = [
-    { name: 'Rolling', window: extractWindow(html, 'rollingUsage') as GoWindow },
-    { name: 'Weekly', window: extractWindow(html, 'weeklyUsage') as GoWindow },
-    { name: 'Monthly', window: extractWindow(html, 'monthlyUsage') as GoWindow },
-  ].filter((w) => w.window !== null) as Array<{ name: string; window: GoWindow }>;
+  const found = [
+    { name: 'Rolling', window: extractWindow(html, 'rollingUsage') },
+    { name: 'Weekly', window: extractWindow(html, 'weeklyUsage') },
+    { name: 'Monthly', window: extractWindow(html, 'monthlyUsage') },
+  ].filter((w): w is { name: string; window: { quotaPercent: number; resetInSec: number } } => w.window !== null);
 
-  if (windows.length === 0) {
+  if (found.length === 0) {
     return { models: [], error: 'Could not parse quota data from the OpenCode Go page. The page format may have changed.' };
   }
 
-  const models: QuotaModel[] = windows.map(({ name, window }) => ({
-    name,
-    percentage: Math.min(100, Math.max(0, 100 - window.quotaPercent)),
-    resetTime: formatTimeUntil(nowSec + window.resetInSec),
-  }));
-
-  return { models };
+  return {
+    models: found.map(({ name, window }) => ({
+      name,
+      percentage: Math.min(100, Math.max(0, 100 - window.quotaPercent)),
+      resetTime: formatTimeUntil(nowSec + window.resetInSec),
+    })),
+  };
 }
 
 export const opencodeGoApi = {
-  async fetchQuota(workspaceId: string, authCookie: string): Promise<OpenCodeGoQuotaResult> {
-    const wid = workspaceId.trim();
-    const cookie = authCookie.trim();
+  async fetchQuota(creds: OpenCodeGoCredentials): Promise<OpenCodeGoQuotaResult> {
+    const apiKey = (creds.apiKey || '').trim();
+    if (apiKey) {
+      try {
+        const result = await apiCallApi.request({
+          method: 'GET',
+          url: OFFICIAL_USAGE_URL,
+          header: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+        });
+        if (result.statusCode === 401 || result.statusCode === 403) {
+          return { models: [], error: 'OpenCode Go API key invalid. Re-detect or check your OpenCode login.' };
+        }
+        if (result.statusCode < 200 || result.statusCode >= 300) {
+          return { models: [], error: `OpenCode Go request failed (HTTP ${result.statusCode})` };
+        }
+        return parseOfficialUsage(result.body);
+      } catch (err) {
+        return { models: [], error: (err as Error).message };
+      }
+    }
+
+    const wid = extractWorkspaceId(creds.workspaceId || '');
+    const cookie = (creds.authCookie || '').trim();
     if (!wid || !cookie) {
       return { models: [], error: 'OpenCode Go is not connected' };
     }

@@ -203,9 +203,9 @@ export function useQuotaPresenter() {
           } : f)
         } : s));
       } else if (targetProvider === 'opencode-go') {
-        const { workspaceId, authCookie } = useOpenCodeGoStore.getState();
-        if (!workspaceId || !authCookie) throw new Error('OpenCode Go is not connected');
-        const result = await opencodeGoApi.fetchQuota(workspaceId, authCookie);
+        const { apiKey, workspaceId, authCookie } = useOpenCodeGoStore.getState();
+        if (!apiKey && (!workspaceId || !authCookie)) throw new Error('OpenCode Go is not connected');
+        const result = await opencodeGoApi.fetchQuota({ apiKey, workspaceId, authCookie });
         setSections((prev) => prev.map(s => s.provider === 'opencode-go' ? {
           ...s,
           files: s.files.map(f => f.fileId === fileId ? {
@@ -281,8 +281,8 @@ export function useQuotaPresenter() {
         files: grouped[p.key] || [],
       })));
 
-      const { workspaceId: goWorkspaceId, authCookie: goAuthCookie } = useOpenCodeGoStore.getState();
-      const goConnected = Boolean(goWorkspaceId && goAuthCookie);
+      const { apiKey: goApiKey, workspaceId: goWorkspaceId, authCookie: goAuthCookie } = useOpenCodeGoStore.getState();
+      const goConnected = Boolean(goApiKey || (goWorkspaceId && goAuthCookie));
       if (goConnected) {
         setSections((prev) => [
           ...prev,
@@ -400,6 +400,16 @@ export function useQuotaPresenter() {
     setIsPrivacyMode(prev => !prev);
   }, []);
 
+  const reload = useCallback(() => {
+    loadAuthFiles();
+  }, [loadAuthFiles]);
+
+  useEffect(() => {
+    const handler = () => loadAuthFiles();
+    window.addEventListener('zero-limit:accounts-changed', handler);
+    return () => window.removeEventListener('zero-limit:accounts-changed', handler);
+  }, [loadAuthFiles]);
+
   return {
     isAuthenticated,
     sections,
@@ -415,5 +425,6 @@ export function useQuotaPresenter() {
     displayedFiles,
     refreshDisplayed,
     fetchQuotaForFile,
+    reload,
   };
 }

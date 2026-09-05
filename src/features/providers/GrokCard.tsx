@@ -7,6 +7,8 @@ import { Loader2 } from 'lucide-react';
 import { useXaiStore } from '@/features/providers/xai.store';
 import { xaiApi } from '@/services/api/xai.service';
 import { grokCliApi } from '@/services/api/grokCli.service';
+import { notifyAccountsChanged } from '@/features/providers/opencodeGo.store';
+import { isTauri } from '@/services/tauri';
 
 /**
  * Grok tracking with two methods:
@@ -21,11 +23,57 @@ export function GrokCard() {
   const [keyInput, setKeyInput] = useState('');
   const [cliKeyInput, setCliKeyInput] = useState('');
   const [cliRefreshInput, setCliRefreshInput] = useState('');
-  const [checking, setChecking] = useState<'key' | 'cli' | null>(null);
+  const [checking, setChecking] = useState<'key' | 'cli' | 'auto' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
   const keyConnected = Boolean(apiKey);
   const cliConnected = Boolean(cliKey);
+
+  const connectCliSession = async (key: string, refresh: string) => {
+    const result = await grokCliApi.fetchQuota(key, refresh || undefined);
+    if (result.error || result.models.length === 0) {
+      throw new Error(result.error || t('grok.noCliData', 'No Grok CLI usage returned. Check your session key.'));
+    }
+    if (result.refreshed) {
+      setCliSession(result.refreshed.key, result.refreshed.refresh);
+    } else {
+      setCliSession(key, refresh);
+    }
+    setCliKeyInput('');
+    setCliRefreshInput('');
+    notifyAccountsChanged();
+  };
+
+  const handleAutoDetectCli = async () => {
+    setError(null);
+    if (!isTauri()) {
+      setError(t('grok.desktopOnly', 'Auto-detect needs the desktop app. Paste the session key manually below.'));
+      return;
+    }
+    setChecking('auto');
+    try {
+      const { readTextFile } = await import('@tauri-apps/plugin-fs');
+      const { join, homeDir } = await import('@tauri-apps/api/path');
+      const configPath = await join(await homeDir(), '.grok', 'auth.json');
+      const raw = await readTextFile(configPath);
+      const data = JSON.parse(raw) as Record<string, { key?: unknown; refresh_token?: unknown } | undefined>;
+      let found: { key: string; refresh: string } | null = null;
+      for (const entry of Object.values(data || {})) {
+        if (entry && typeof entry.key === 'string' && entry.key) {
+          found = { key: entry.key, refresh: typeof entry.refresh_token === 'string' ? entry.refresh_token : '' };
+          break;
+        }
+      }
+      if (!found) {
+        throw new Error(t('grok.noLocalSession', 'No Grok CLI session found. Run grok login first.'));
+      }
+      await connectCliSession(found.key, found.refresh);
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setChecking(null);
+    }
+  };
 
   const handleConnectKey = async () => {
     setError(null);
@@ -43,6 +91,7 @@ export function GrokCard() {
       }
       setApiKey(key);
       setKeyInput('');
+      notifyAccountsChanged();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -60,18 +109,7 @@ export function GrokCard() {
     }
     setChecking('cli');
     try {
-      const result = await grokCliApi.fetchQuota(key, refresh || undefined);
-      if (result.error || result.models.length === 0) {
-        setError(result.error || t('grok.noCliData', 'No Grok CLI usage returned. Check your session key.'));
-        return;
-      }
-      if (result.refreshed) {
-        setCliSession(result.refreshed.key, result.refreshed.refresh);
-      } else {
-        setCliSession(key, refresh);
-      }
-      setCliKeyInput('');
-      setCliRefreshInput('');
+      await connectCliSession(key, refresh);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -98,7 +136,7 @@ export function GrokCard() {
         <div className="space-y-3">
           <p className="text-sm font-medium">{t('grok.apiKeyMethod', 'xAI console API key')}</p>
           {keyConnected ? (
-            <Button variant="outline" className="w-full" onClick={clearApiKey}>
+            <Button variant="outline" className="w-full" onClick={() => { clearApiKey(); notifyAccountsChanged(); }}>
               {t('grok.disconnect', 'Disconnect')}
             </Button>
           ) : (
@@ -120,11 +158,15 @@ export function GrokCard() {
         <div className="space-y-3 border-t pt-4">
           <p className="text-sm font-medium">{t('grok.cliMethod', 'Grok CLI session (free tier)')}</p>
           {cliConnected ? (
-            <Button variant="outline" className="w-full" onClick={() => { clearCliSession(); setError(null); }}>
+            <Button variant="outline" className="w-full" onClick={() => { clearCliSession(); setError(null); notifyAccountsChanged(); }}>
               {t('grok.disconnectCli', 'Disconnect CLI session')}
             </Button>
           ) : (
             <>
+              <Button className="w-full" onClick={handleAutoDetectCli} disabled={checking !== null}>
+                {checking === 'auto' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {t('grok.autoDetect', 'Auto-detect from Grok CLI')}
+              </Button>
               <Input
                 type="password"
                 placeholder={t('grok.cliKeyPlaceholder', 'Session key (.key in ~/.grok/auth.json)')}

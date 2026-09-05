@@ -53,10 +53,10 @@ Cursor requires the Plus binary. Add it from the **Providers** page like any oth
 
 ### Tracking OpenCode Go usage
 
-OpenCode Go needs no proxy account. On the **Providers** page, fill in the OpenCode Go card:
+OpenCode Go needs no proxy account. On the **Providers** page, fill in the OpenCode Go card. Easiest is **Auto-detect from OpenCode config** (desktop app only), which reads your local `opencode-go` key and uses the official usage API. Otherwise enter manually:
 
-1. Log in at `opencode.ai` and open the Go page for your workspace (`opencode.ai/workspace/<workspace-id>/go`) — the `<workspace-id>` part (starting with `wrk_`) is your Workspace ID.
-2. In browser devtools (Application > Cookies > `opencode.ai`), copy the `auth` cookie value.
+1. Log in at `opencode.ai` and open the Go page for your workspace (`opencode.ai/workspace/<workspace-id>/go`) — paste either the bare workspace ID or the full page URL.
+2. In browser devtools (Application > Cookies > `https://opencode.ai`), copy the `auth` cookie value.
 3. Paste both into the card and click **Connect** — ZeroLimit verifies them immediately and shows any error inline.
 
 The cookie expires periodically; when quota checks start failing with an authentication error, paste a fresh cookie. Usage appears on the **Quota** page as Rolling, Weekly, and Monthly windows.
@@ -65,7 +65,9 @@ The cookie expires periodically; when quota checks start failing with an authent
 
 ### Tracking Grok usage
 
-The Grok card offers two methods. **Grok CLI session (free tier)**: copy `.key` and `.refresh_token` from the `auth.x.ai` entry in `~/.grok/auth.json` (created by `grok login`) into the card. ZeroLimit reads monthly/weekly usage from the CLI billing endpoints and renews the session automatically when a refresh token is saved (sessions otherwise expire after about 7 days). **xAI console API key**: create a key with model access at `x.ai` to track API-platform credit balances instead. The CLI session takes precedence when both are connected.
+### Tracking Grok usage
+
+The Grok card offers two methods. **Grok CLI session (free tier)**: use **Auto-detect from Grok CLI** (desktop app only), which reads `~/.grok/auth.json`, or paste the session key and refresh token manually. ZeroLimit reads monthly/weekly usage from the CLI billing endpoints and renews the session automatically when a refresh token is saved (sessions otherwise expire after about 7 days). **xAI console API key**: create a key with model access at `x.ai` to track API-platform credit balances instead. The CLI session takes precedence when both are connected.
 
 ### Tracking Command Code usage
 

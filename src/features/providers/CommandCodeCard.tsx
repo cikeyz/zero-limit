@@ -6,6 +6,7 @@ import { Input } from '@/shared/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { useCommandCodeStore } from '@/features/providers/commandcode.store';
 import { commandcodeApi } from '@/services/api/commandcode.service';
+import { notifyAccountsChanged } from '@/features/providers/opencodeGo.store';
 
 /**
  * Manual credential card for Command Code (GOAT and other plans).
@@ -37,6 +38,7 @@ export function CommandCodeCard() {
       }
       setApiKey(key);
       setKeyInput('');
+      notifyAccountsChanged();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -48,6 +50,7 @@ export function CommandCodeCard() {
     clearApiKey();
     setKeyInput('');
     setError(null);
+    notifyAccountsChanged();
   };
 
   return (
