@@ -6,7 +6,7 @@ function clampPct(value: number): number {
 }
 
 // Parses POST /aiserver.v1.DashboardService/GetCurrentPeriodUsage.
-// Dashboard reports percent USED, while the UI renders percent LEFT.
+// Dashboard reports percent USED, which is what the UI renders.
 export function parseCursorUsage(body: unknown): CursorQuotaResult {
   const payload = (body ?? null) as Record<string, unknown> | null;
   if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
@@ -38,13 +38,13 @@ export function parseCursorUsage(body: unknown): CursorQuotaResult {
   const apiUsed = normalizeNumberValue(planUsage.apiPercentUsed);
 
   if (totalUsed !== null) {
-    models.push({ name: 'Plan usage', percentage: clampPct(100 - totalUsed), resetTime, displayValue: spendLabel });
+    models.push({ name: 'Plan usage', percentage: clampPct(totalUsed), resetTime, displayValue: spendLabel, used: true });
   }
   if (autoUsed !== null) {
-    models.push({ name: 'Auto models', percentage: clampPct(100 - autoUsed), resetTime });
+    models.push({ name: 'Auto models', percentage: clampPct(autoUsed), resetTime, used: true });
   }
   if (apiUsed !== null) {
-    models.push({ name: 'API usage', percentage: clampPct(100 - apiUsed), resetTime });
+    models.push({ name: 'API usage', percentage: clampPct(apiUsed), resetTime, used: true });
   }
 
   if (models.length === 0) {

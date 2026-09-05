@@ -18,8 +18,9 @@ export function parseClaudeUsage(data: any): ClaudeQuotaResult {
       if (!isNaN(utilization)) {
         models.push({
           name,
-          percentage: Math.max(0, Math.min(100, 100 - utilization)),
-          resetTime: usage.resets_at || ''
+          percentage: Math.max(0, Math.min(100, utilization)),
+          resetTime: usage.resets_at || '',
+          used: true
         });
       }
     }
@@ -36,8 +37,9 @@ export function parseClaudeUsage(data: any): ClaudeQuotaResult {
     if (!isNaN(utilization)) {
       models.push({
         name: 'extra-usage',
-        percentage: Math.max(0, Math.min(100, 100 - utilization)),
+        percentage: Math.max(0, Math.min(100, utilization)),
         resetTime: '',
+        used: true,
         displayValue: extra.used_credits !== undefined && extra.monthly_limit !== undefined
           ? `${extra.used_credits} / ${extra.monthly_limit}`
           : undefined

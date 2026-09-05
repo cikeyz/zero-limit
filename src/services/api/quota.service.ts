@@ -170,7 +170,7 @@ export const quotaApi = {
         const rawReason = (body?.reason as string) || '';
         const reason = rawReason.replace(/_/g, ' ').toLowerCase().replace(/^\w/, c => c.toUpperCase()) || 'Suspended';
         return {
-          models: [{ name: 'Kiro', percentage: 100, resetTime: reason }],
+          models: [{ name: 'Kiro', percentage: 100, resetTime: reason, used: true }],
           plan: 'Suspended'
         };
       }

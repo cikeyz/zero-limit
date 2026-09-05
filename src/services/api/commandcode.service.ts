@@ -56,8 +56,9 @@ export function parseCommandCodeQuota(
     if (!w || w.used === null || w.cap === null || w.cap <= 0) return;
     models.push({
       name,
-      percentage: clampPct(100 - (w.used / w.cap) * 100),
+      percentage: clampPct((w.used / w.cap) * 100),
       resetTime: w.resetAt !== null ? formatTimeUntil(w.resetAt) : undefined,
+      used: true,
     });
   };
 
@@ -76,9 +77,10 @@ export function parseCommandCodeQuota(
   if (monthly !== null) {
     models.push({
       name: 'Monthly credits',
-      percentage: 100,
-      displayValue: `$${monthly.toFixed(2)} remaining`,
+      percentage: 0,
+      displayValue: `$${monthly.toFixed(2)} used`,
       resetTime: monthlyReset,
+      used: true,
     });
   }
 

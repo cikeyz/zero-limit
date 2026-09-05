@@ -215,7 +215,7 @@ export function ProviderQuotaCard({
                                                 )}
                                                 <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                                                     <div
-                                                        className={`h-full rounded-full ${item.percentage > 20 ? 'bg-green-500' : 'bg-yellow-500'}`}
+                                                        className={`h-full rounded-full ${item.used ? (item.percentage < 80 ? 'bg-green-500' : 'bg-yellow-500') : (item.percentage > 20 ? 'bg-green-500' : 'bg-yellow-500')}`}
                                                         style={{ width: `${item.percentage}%` }}
                                                     />
                                                 </div>

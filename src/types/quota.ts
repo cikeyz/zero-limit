@@ -22,12 +22,12 @@ export interface ClaudeQuotaResult {
 
 export interface CodexQuotaResult {
   plan?: string;
-  limits: Array<{ name: string; percentage: number; resetTime?: string }>;
+  limits: Array<{ name: string; percentage: number; resetTime?: string; used?: boolean }>;
   error?: string;
 }
 
 export interface GeminiCliQuotaResult {
-  buckets: Array<{ modelId: string; percentage: number; resetTime?: string }>;
+  buckets: Array<{ modelId: string; percentage: number; resetTime?: string; used?: boolean }>;
   error?: string;
 }
 
@@ -73,7 +73,7 @@ export interface FileQuota {
   originalFile?: AuthFile;
   models?: QuotaModel[];
   plan?: string;
-  limits?: Array<{ name: string; percentage: number; resetTime?: string }>;
+  limits?: Array<{ name: string; percentage: number; resetTime?: string; used?: boolean }>;
   email?: string;
 }
 

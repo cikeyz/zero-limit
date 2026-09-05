@@ -61,15 +61,15 @@ const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
 
 const PROVIDER_DISPLAY: { key: string; name: string }[] = [
   { key: 'antigravity', name: 'Antigravity' },
-  { key: 'codex', name: 'Codex (OpenAI)' },
-  { key: 'gemini-cli', name: 'Gemini CLI' },
-  { key: 'kiro', name: 'Kiro (CodeWhisperer)' },
-  { key: 'copilot', name: 'GitHub Copilot' },
   { key: 'anthropic', name: 'Claude (Anthropic)' },
-  { key: 'cursor', name: 'Cursor' },
-  { key: 'opencode-go', name: 'OpenCode Go' },
-  { key: 'grok', name: 'Grok (xAI)' },
+  { key: 'codex', name: 'Codex (OpenAI)' },
   { key: 'commandcode', name: 'Command Code' },
+  { key: 'cursor', name: 'Cursor' },
+  { key: 'gemini-cli', name: 'Gemini CLI' },
+  { key: 'copilot', name: 'GitHub Copilot' },
+  { key: 'grok', name: 'Grok (xAI)' },
+  { key: 'kiro', name: 'Kiro (CodeWhisperer)' },
+  { key: 'opencode-go', name: 'OpenCode Go' },
   { key: 'unknown', name: 'Other' },
 ];
 
@@ -170,7 +170,7 @@ export function useQuotaPresenter() {
             ...f,
             loading: false,
             models: result.buckets.map(b => ({
-              name: b.modelId, percentage: b.percentage, resetTime: b.resetTime
+              name: b.modelId, percentage: b.percentage, resetTime: b.resetTime, used: b.used ?? true
             })),
             error: result.error
           } : f)

@@ -10,7 +10,7 @@ export function parseCodexUsage(body: unknown): CodexQuotaResult {
   if (!payload) return { limits: [] };
 
   const planType = (payload.plan_type ?? payload.planType ?? 'Plus') as string;
-  const limits: Array<{ name: string; percentage: number; resetTime?: string }> = [];
+  const limits: Array<{ name: string; percentage: number; resetTime?: string; used?: boolean }> = [];
 
   const processWindow = (
     name: string,
@@ -23,11 +23,11 @@ export function parseCodexUsage(body: unknown): CodexQuotaResult {
     let percentage = 0;
 
     if (usedRaw !== null && usedRaw !== undefined) {
-      percentage = Math.max(0, Math.min(100, 100 - usedRaw));
+      percentage = Math.max(0, Math.min(100, Number(usedRaw)));
     } else {
       const remaining = window.remaining_count ?? window.remainingCount ?? 0;
       const total = window.total_count ?? window.totalCount ?? 1;
-      percentage = Math.round((Number(remaining) / Math.max(Number(total), 1)) * 100);
+      percentage = Math.round((1 - Number(remaining) / Math.max(Number(total), 1)) * 100);
     }
 
     const resetTime = formatCodexResetLabel(window);
@@ -35,7 +35,8 @@ export function parseCodexUsage(body: unknown): CodexQuotaResult {
     limits.push({
       name,
       percentage,
-      resetTime: resetTime !== '-' ? resetTime : undefined
+      resetTime: resetTime !== '-' ? resetTime : undefined,
+      used: true
     });
   };
 

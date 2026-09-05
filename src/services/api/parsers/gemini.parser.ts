@@ -11,8 +11,9 @@ export function parseGeminiCliQuota(body: unknown): GeminiCliQuotaResult {
   return {
     buckets: buckets.map((bucket) => ({
       modelId: String(bucket.modelId ?? bucket.model_id ?? 'Unknown'),
-      percentage: Math.round(Number(bucket.remainingFraction ?? bucket.remaining_fraction ?? 0) * 100),
-      resetTime: typeof bucket.resetTime === 'string' ? formatTimeUntil(bucket.resetTime) : undefined
+      percentage: Math.round((1 - Number(bucket.remainingFraction ?? bucket.remaining_fraction ?? 0)) * 100),
+      resetTime: typeof bucket.resetTime === 'string' ? formatTimeUntil(bucket.resetTime) : undefined,
+      used: true
     }))
   };
 }

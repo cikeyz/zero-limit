@@ -40,18 +40,18 @@ export function parseCopilotQuota(body: unknown): CopilotQuotaResult {
       const snap = snapshot as Record<string, unknown> | undefined;
       if (!snap || snap.unlimited === true) return;
 
-      let percentage = 100;
+      let percentage = 0;
       if (typeof snap.percent_remaining === 'number') {
-        percentage = Math.min(100, Math.max(0, snap.percent_remaining));
+        percentage = Math.min(100, Math.max(0, 100 - snap.percent_remaining));
       } else {
         const remaining = (snap.remaining as number) ?? 0;
         const total = (snap.entitlement as number) ?? defaultTotal;
         if (total > 0) {
-          percentage = Math.min(100, Math.max(0, (remaining / total) * 100));
+          percentage = Math.min(100, Math.max(0, ((total - remaining) / total) * 100));
         }
       }
 
-      models.push({ name, percentage: Math.round(percentage), resetTime });
+      models.push({ name, percentage: Math.round(percentage), resetTime, used: true });
     };
 
     parseSnapshot('Chat', quotaSnapshots.chat, 50);
@@ -68,8 +68,8 @@ export function parseCopilotQuota(body: unknown): CopilotQuotaResult {
         const remaining = (limitedQuotas[remainingKey] as number) ?? 0;
         const total = (monthlyQuotas[totalKey] as number) ?? 0;
         if (total > 0) {
-          const percentage = Math.min(100, Math.max(0, (remaining / total) * 100));
-          models.push({ name, percentage: Math.round(percentage), resetTime });
+          const percentage = Math.min(100, Math.max(0, ((total - remaining) / total) * 100));
+          models.push({ name, percentage: Math.round(percentage), resetTime, used: true });
         }
       };
 
@@ -79,7 +79,7 @@ export function parseCopilotQuota(body: unknown): CopilotQuotaResult {
   }
 
   if (models.length === 0) {
-    models.push({ name: 'Copilot', percentage: 100, resetTime: undefined });
+    models.push({ name: 'Copilot', percentage: 0, resetTime: undefined, used: true });
   }
 
   return { models, plan };

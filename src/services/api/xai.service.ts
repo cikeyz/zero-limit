@@ -34,20 +34,20 @@ export function parseXaiQuota(
   const keyName = typeof payload.name === 'string' ? payload.name : undefined;
 
   if (remaining !== null && granted !== null && granted > 0) {
+    const spentVal = spent !== null ? spent : Math.max(0, granted - remaining);
     models.push({
       name: 'Credits',
-      percentage: clampPct((remaining / granted) * 100),
-      displayValue: `$${remaining.toFixed(2)} remaining`,
+      percentage: clampPct((spentVal / granted) * 100),
+      displayValue: `$${spentVal.toFixed(2)} of $${granted.toFixed(2)} spent`,
+      used: true,
     });
-  } else if (remaining !== null) {
+  } else if (spent !== null) {
     models.push({
       name: 'Credits',
-      percentage: 100,
-      displayValue: `$${remaining.toFixed(2)} remaining`,
+      percentage: 0,
+      displayValue: `$${spent.toFixed(2)} spent`,
+      used: true,
     });
-  }
-  if (spent !== null && spent > 0 && models.length > 0) {
-    models[0] = { ...models[0], displayValue: `$${remaining?.toFixed(2) ?? '?'} left · $${spent.toFixed(2)} spent` };
   }
 
   // Rate limits ride along on the models endpoint headers (best effort).
@@ -56,10 +56,10 @@ export function parseXaiQuota(
   const tokLimit = normalizeNumberValue(firstHeader(headers, 'x-ratelimit-limit-tokens'));
   const tokRemaining = normalizeNumberValue(firstHeader(headers, 'x-ratelimit-remaining-tokens'));
   if (reqLimit !== null && reqLimit > 0 && reqRemaining !== null) {
-    models.push({ name: 'Requests', percentage: clampPct((reqRemaining / reqLimit) * 100) });
+    models.push({ name: 'Requests', percentage: clampPct(100 - (reqRemaining / reqLimit) * 100), used: true });
   }
   if (tokLimit !== null && tokLimit > 0 && tokRemaining !== null) {
-    models.push({ name: 'Tokens', percentage: clampPct((tokRemaining / tokLimit) * 100) });
+    models.push({ name: 'Tokens', percentage: clampPct(100 - (tokRemaining / tokLimit) * 100), used: true });
   }
 
   if (models.length === 0) {

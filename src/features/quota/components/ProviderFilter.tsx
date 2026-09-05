@@ -26,6 +26,7 @@ export function ProviderFilter({ items, activeId, onSelect }: ProviderFilterProp
           <button
             key={item.id}
             onClick={() => onSelect(item.id)}
+            title={isActive ? undefined : item.label}
             className={cn(
               "flex min-w-fit items-center gap-2 rounded-lg border px-4 py-2.5 transition-all duration-200",
               isActive
@@ -41,9 +42,11 @@ export function ProviderFilter({ items, activeId, onSelect }: ProviderFilterProp
                />
             )}
 
-            <span className="text-sm font-medium">{item.label}</span>
+            {(isActive || !item.icon) && (
+              <span className="text-sm font-medium">{item.label}</span>
+            )}
 
-            {item.count > 0 && (
+            {(isActive || !item.icon) && item.count > 0 && (
               <Badge
                 variant="secondary"
                 className={cn(

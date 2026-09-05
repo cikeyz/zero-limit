@@ -48,8 +48,9 @@ export function parseAntigravityModels(body: unknown): QuotaModel[] {
 
     models.push({
       name,
-      percentage: Math.round(parsedRemaining * 100),
-      resetTime
+      percentage: Math.round((1 - parsedRemaining) * 100),
+      resetTime,
+      used: true
     });
   });
 
@@ -94,8 +95,9 @@ export function parseAntigravityModels(body: unknown): QuotaModel[] {
 
     models.push({
       name,
-      percentage: 100,
-      resetTime: undefined
+      percentage: 0,
+      resetTime: undefined,
+      used: true
     });
   });
 

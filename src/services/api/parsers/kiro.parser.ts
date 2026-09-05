@@ -34,11 +34,10 @@ export function parseKiroQuota(body: unknown): KiroQuotaResult {
       if (hasActiveTrial && freeTrialInfo) {
         const used = Math.round((freeTrialInfo.currentUsageWithPrecision as number) ?? (freeTrialInfo.currentUsage as number) ?? 0);
         const total = Math.round((freeTrialInfo.usageLimitWithPrecision as number) ?? (freeTrialInfo.usageLimit as number) ?? 0);
-        const remaining = total - used;
 
         let percentage = 0;
         if (total > 0) {
-          percentage = Math.max(0, Math.round(remaining / total * 100));
+          percentage = Math.max(0, Math.round(used / total * 100));
         }
 
         let trialResetStr: string | undefined;
@@ -57,28 +56,29 @@ export function parseKiroQuota(body: unknown): KiroQuotaResult {
         models.push({
           name: `Bonus ${displayNamePlural}`,
           percentage,
-          resetTime: trialResetStr
+          resetTime: trialResetStr,
+          used: true
         });
       }
 
       const regularUsed = Math.round((breakdown.currentUsageWithPrecision as number) ?? (breakdown.currentUsage as number) ?? 0);
       const regularTotal = Math.round((breakdown.usageLimitWithPrecision as number) ?? (breakdown.usageLimit as number) ?? 0);
-      const regularRemaining = regularTotal - regularUsed;
 
       if (regularTotal > 0) {
-        const percentage = Math.max(0, Math.round(regularRemaining / regularTotal * 100));
+        const percentage = Math.max(0, Math.round(regularUsed / regularTotal * 100));
         const quotaName = hasActiveTrial ? `Base ${displayNamePlural}` : displayNamePlural;
         models.push({
           name: quotaName,
           percentage,
-          resetTime: resetTimeStr
+          resetTime: resetTimeStr,
+          used: true
         });
       }
     }
   }
 
   if (models.length === 0) {
-    models.push({ name: 'kiro-standard', percentage: 100, resetTime: undefined });
+    models.push({ name: 'kiro-standard', percentage: 0, resetTime: undefined, used: true });
   }
 
   const userInfo = payload.userInfo as Record<string, unknown> | undefined;

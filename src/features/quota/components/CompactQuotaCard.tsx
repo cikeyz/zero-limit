@@ -164,8 +164,8 @@ export function CompactQuotaCard({
             <div key={idx} className="flex items-center justify-between gap-2 min-w-0">
               <span className="font-medium truncate flex-1" title={group.name}>{group.name}</span>
               <div className="flex items-center gap-2 flex-shrink-0">
-                <span className={`font-bold ${getPercentColor(group.percentage)}`}>
-                  {group.percentage}%
+                <span className={`font-bold ${getPercentColor(group.used ? 100 - group.percentage : group.percentage)}`}>
+                  {group.percentage}{group.used ? '% used' : '%'}
                 </span>
                 {group.resetTime && (
                   <span className="flex items-center gap-0.5 text-[10px]">
@@ -231,7 +231,7 @@ export function CompactQuotaCard({
                           )}
                           <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
                             <div
-                              className={`h-full rounded-full ${getProgressColor(item.percentage)}`}
+                              className={`h-full rounded-full ${getProgressColor(item.used ? 100 - item.percentage : item.percentage)}`}
                               style={{ width: `${item.percentage}%` }}
                             />
                           </div>

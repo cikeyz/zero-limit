@@ -58,24 +58,28 @@ export function parseGrokCliBilling(
   const models: QuotaModel[] = [{
     name: 'Monthly usage',
     percentage: monthly.monthlyLimit > 0
-      ? clampPct(100 - (monthly.used / monthly.monthlyLimit) * 100)
-      : 100,
+      ? clampPct((monthly.used / monthly.monthlyLimit) * 100)
+      : 0,
     displayValue: monthly.monthlyLimit > 0
       ? `${monthly.used.toLocaleString()} / ${monthly.monthlyLimit.toLocaleString()} credits`
       : `${monthly.used.toLocaleString()} used (no cap reported)`,
     resetTime: formatTimeUntil(monthly.billingPeriodEnd),
+    used: true,
   }];
 
   const weekly = (weeklyBody ?? null) as Record<string, unknown> | null;
   const wConfig = weekly?.config as Record<string, unknown> | undefined;
-  if (wConfig?.type === 'USAGE_PERIOD_TYPE_WEEKLY') {
+  const wPeriod = wConfig?.currentPeriod as Record<string, unknown> | undefined;
+  const wType = wConfig?.type ?? wPeriod?.type;
+  if (wType === 'USAGE_PERIOD_TYPE_WEEKLY') {
     const pct = normalizeNumberValue(wConfig.creditUsagePercent);
     const end = wConfig.billingPeriodEnd;
     if (pct !== null) {
       models.push({
         name: 'Weekly usage',
-        percentage: clampPct(100 - pct),
+        percentage: clampPct(pct),
         resetTime: typeof end === 'string' && end ? formatTimeUntil(end) : undefined,
+        used: true,
       });
     }
   }
