@@ -92,6 +92,8 @@ export function ProviderQuotaCard({
           icon = '/copilot/copilot.png';
         } else if (lowerProvider.includes('cursor')) {
           icon = '/cursor/cursor.svg';
+        } else if (lowerProvider.includes('opencode')) {
+          icon = '/opencode-go/opencode-go.svg';
         } else {
           icon = '/openai/openai.png'; // Default fallback
         }

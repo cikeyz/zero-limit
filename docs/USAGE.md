@@ -51,6 +51,16 @@ If you already have CLIProxyAPI downloaded or prefer to manage it yourself:
 
 Cursor requires the Plus binary. Add it from the **Providers** page like any other provider (Cursor uses the proxy's `cursor-login` OAuth flow), then its plan usage appears on the **Quota** page alongside your other accounts.
 
+### Tracking OpenCode Go usage
+
+OpenCode Go needs no proxy account. On the **Providers** page, fill in the OpenCode Go card:
+
+1. Log in at `opencode.ai` and open the Go page for your workspace (`opencode.ai/workspace/<workspace-id>/go`) — the `<workspace-id>` part (starting with `wrk_`) is your Workspace ID.
+2. In browser devtools (Application > Cookies > `opencode.ai`), copy the `auth` cookie value.
+3. Paste both into the card and click **Connect** — ZeroLimit verifies them immediately and shows any error inline.
+
+The cookie expires periodically; when quota checks start failing with an authentication error, paste a fresh cookie. Usage appears on the **Quota** page as Rolling, Weekly, and Monthly windows.
+
 ---
 
 #### Option C: Remote Server

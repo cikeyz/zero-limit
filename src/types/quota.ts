@@ -50,6 +50,11 @@ export interface CursorQuotaResult {
   error?: string;
 }
 
+export interface OpenCodeGoQuotaResult {
+  models: QuotaModel[];
+  error?: string;
+}
+
 export interface FileQuota {
   fileId: string;
   filename: string;

@@ -46,6 +46,7 @@ import {
   formatName,
   getProviderIconInfo,
 } from '@/features/providers/useProvidersPresenter';
+import { OpenCodeGoCard } from '@/features/providers/OpenCodeGoCard';
 
 export function ProvidersPage() {
   const { t } = useTranslation();
@@ -555,6 +556,11 @@ export function ProvidersPage() {
                         </div>
                     );
                 })}
+            </div>
+
+            {/* Manual credential providers (no OAuth via proxy) */}
+            <div className="pt-2">
+                <OpenCodeGoCard />
             </div>
         </section>
 

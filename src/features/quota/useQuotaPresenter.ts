@@ -5,8 +5,10 @@ import { quotaApi } from '@/services/api/quota.service';
 import type { AuthFile, FileQuota, ProviderSection } from '@/types';
 import type { ProviderFilterItem } from '@/features/quota/components/ProviderFilter';
 import { resolveCodexChatgptAccountId, resolveCodexPlanType, resolveGeminiCliProjectId } from '@/shared/utils/quota.helpers';
+import { useOpenCodeGoStore } from '@/features/providers/opencodeGo.store';
+import { opencodeGoApi } from '@/services/api/opencodeGo.service';
 
-function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'unknown' {
+function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'opencode-go' | 'unknown' {
   const filename = (file?.filename || file?.id || '').toLowerCase();
 
   if (filename.startsWith('antigravity-') || filename.includes('antigravity')) return 'antigravity';
@@ -16,6 +18,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (filename.startsWith('github-copilot-') || filename.includes('copilot')) return 'copilot';
   if (filename.startsWith('claude-') || filename.includes('claude') || filename.includes('anthropic')) return 'anthropic';
   if (filename.startsWith('cursor-') || filename.includes('cursor')) return 'cursor';
+  if (filename.includes('opencode')) return 'opencode-go';
 
   const provider = (file?.provider || '').toLowerCase();
   if (provider.includes('antigravity')) return 'antigravity';
@@ -25,6 +28,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (provider.includes('copilot') || provider.includes('github')) return 'copilot';
   if (provider.includes('claude') || provider.includes('anthropic')) return 'anthropic';
   if (provider.includes('cursor')) return 'cursor';
+  if (provider.includes('opencode')) return 'opencode-go';
 
   return 'unknown';
 }
@@ -41,6 +45,7 @@ const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
   copilot: { path: '/copilot/copilot.png', needsInvert: true },
   anthropic: { path: '/claude/claude.png', needsInvert: false },
   cursor: { path: '/cursor/cursor.svg', needsInvert: false },
+  'opencode-go': { path: '/opencode-go/opencode-go.svg', needsInvert: false },
 };
 
 const PROVIDER_DISPLAY: { key: string; name: string }[] = [
@@ -51,6 +56,7 @@ const PROVIDER_DISPLAY: { key: string; name: string }[] = [
   { key: 'copilot', name: 'GitHub Copilot' },
   { key: 'anthropic', name: 'Claude (Anthropic)' },
   { key: 'cursor', name: 'Cursor' },
+  { key: 'opencode-go', name: 'OpenCode Go' },
   { key: 'unknown', name: 'Other' },
 ];
 
@@ -65,6 +71,11 @@ export function useQuotaPresenter() {
 
   const fetchQuotaForFile = useCallback(async (fileId: string, providedFile?: AuthFile) => {
     let targetProvider: string | undefined;
+
+    const maybeQuota = providedFile as unknown as FileQuota | undefined;
+    if (fileId === 'opencode-go' || maybeQuota?.providerKey === 'opencode-go') {
+      targetProvider = 'opencode-go';
+    }
 
     if (providedFile) {
       const type = getProviderType(providedFile);
@@ -174,6 +185,16 @@ export function useQuotaPresenter() {
             ...f, loading: false, plan: result.plan, models: result.models, error: result.error
           } : f)
         } : s));
+      } else if (targetProvider === 'opencode-go') {
+        const { workspaceId, authCookie } = useOpenCodeGoStore.getState();
+        if (!workspaceId || !authCookie) throw new Error('OpenCode Go is not connected');
+        const result = await opencodeGoApi.fetchQuota(workspaceId, authCookie);
+        setSections((prev) => prev.map(s => s.provider === 'opencode-go' ? {
+          ...s,
+          files: s.files.map(f => f.fileId === fileId ? {
+            ...f, loading: false, models: result.models, error: result.error
+          } : f)
+        } : s));
       }
     } catch (err) {
       const msg = (err as Error).message;
@@ -219,11 +240,34 @@ export function useQuotaPresenter() {
         files: grouped[p.key] || [],
       })));
 
+      const { workspaceId: goWorkspaceId, authCookie: goAuthCookie } = useOpenCodeGoStore.getState();
+      const goConnected = Boolean(goWorkspaceId && goAuthCookie);
+      if (goConnected) {
+        setSections((prev) => [
+          ...prev,
+          {
+            provider: 'opencode-go',
+            displayName: 'OpenCode Go',
+            files: [{
+              fileId: 'opencode-go',
+              filename: 'OpenCode Go',
+              provider: 'OpenCode Go',
+              providerKey: 'opencode-go',
+              loading: false,
+            }],
+          },
+        ]);
+      }
+
       files.forEach((file) => {
         if (file?.id) {
           setTimeout(() => fetchQuotaForFile(file.id, file), 0);
         }
       });
+
+      if (goConnected) {
+        setTimeout(() => fetchQuotaForFile('opencode-go'), 0);
+      }
     } catch (err) {
       setError((err as Error).message);
     } finally {
