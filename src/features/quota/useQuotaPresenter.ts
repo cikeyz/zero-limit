@@ -9,8 +9,10 @@ import { useOpenCodeGoStore } from '@/features/providers/opencodeGo.store';
 import { opencodeGoApi } from '@/services/api/opencodeGo.service';
 import { useXaiStore } from '@/features/providers/xai.store';
 import { xaiApi } from '@/services/api/xai.service';
+import { useCommandCodeStore } from '@/features/providers/commandcode.store';
+import { commandcodeApi } from '@/services/api/commandcode.service';
 
-function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'opencode-go' | 'grok' | 'unknown' {
+function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'opencode-go' | 'grok' | 'commandcode' | 'unknown' {
   const filename = (file?.filename || file?.id || '').toLowerCase();
 
   if (filename.startsWith('antigravity-') || filename.includes('antigravity')) return 'antigravity';
@@ -22,6 +24,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (filename.startsWith('cursor-') || filename.includes('cursor')) return 'cursor';
   if (filename.includes('opencode')) return 'opencode-go';
   if (filename.includes('grok') || filename.includes('xai')) return 'grok';
+  if (filename.includes('commandcode') || filename.includes('command-code')) return 'commandcode';
 
   const provider = (file?.provider || '').toLowerCase();
   if (provider.includes('antigravity')) return 'antigravity';
@@ -33,6 +36,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (provider.includes('cursor')) return 'cursor';
   if (provider.includes('opencode')) return 'opencode-go';
   if (provider.includes('grok') || provider.includes('xai')) return 'grok';
+  if (provider.includes('commandcode') || provider.includes('command-code')) return 'commandcode';
 
   return 'unknown';
 }
@@ -51,6 +55,7 @@ const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
   cursor: { path: '/cursor/cursor.svg', needsInvert: false },
   'opencode-go': { path: '/opencode-go/opencode-go.svg', needsInvert: false },
   grok: { path: '/grok/grok.svg', needsInvert: false },
+  commandcode: { path: '/commandcode/commandcode.svg', needsInvert: false },
 };
 
 const PROVIDER_DISPLAY: { key: string; name: string }[] = [
@@ -63,6 +68,7 @@ const PROVIDER_DISPLAY: { key: string; name: string }[] = [
   { key: 'cursor', name: 'Cursor' },
   { key: 'opencode-go', name: 'OpenCode Go' },
   { key: 'grok', name: 'Grok (xAI)' },
+  { key: 'commandcode', name: 'Command Code' },
   { key: 'unknown', name: 'Other' },
 ];
 
@@ -83,6 +89,8 @@ export function useQuotaPresenter() {
       targetProvider = 'opencode-go';
     } else if (fileId === 'grok' || maybeQuota?.providerKey === 'grok') {
       targetProvider = 'grok';
+    } else if (fileId === 'commandcode' || maybeQuota?.providerKey === 'commandcode') {
+      targetProvider = 'commandcode';
     }
 
     if (providedFile) {
@@ -213,6 +221,16 @@ export function useQuotaPresenter() {
             ...f, loading: false, models: result.models, error: result.error
           } : f)
         } : s));
+      } else if (targetProvider === 'commandcode') {
+        const { apiKey } = useCommandCodeStore.getState();
+        if (!apiKey) throw new Error('Command Code is not connected');
+        const result = await commandcodeApi.fetchQuota(apiKey);
+        setSections((prev) => prev.map(s => s.provider === 'commandcode' ? {
+          ...s,
+          files: s.files.map(f => f.fileId === fileId ? {
+            ...f, loading: false, email: result.email, models: result.models, error: result.error
+          } : f)
+        } : s));
       }
     } catch (err) {
       const msg = (err as Error).message;
@@ -296,6 +314,25 @@ export function useQuotaPresenter() {
         ]);
       }
 
+      const { apiKey: commandcodeApiKey } = useCommandCodeStore.getState();
+      const commandcodeConnected = Boolean(commandcodeApiKey);
+      if (commandcodeConnected) {
+        setSections((prev) => [
+          ...prev,
+          {
+            provider: 'commandcode',
+            displayName: 'Command Code',
+            files: [{
+              fileId: 'commandcode',
+              filename: 'Command Code',
+              provider: 'Command Code',
+              providerKey: 'commandcode',
+              loading: false,
+            }],
+          },
+        ]);
+      }
+
       files.forEach((file) => {
         if (file?.id) {
           setTimeout(() => fetchQuotaForFile(file.id, file), 0);
@@ -308,6 +345,10 @@ export function useQuotaPresenter() {
 
       if (grokConnected) {
         setTimeout(() => fetchQuotaForFile('grok'), 0);
+      }
+
+      if (commandcodeConnected) {
+        setTimeout(() => fetchQuotaForFile('commandcode'), 0);
       }
     } catch (err) {
       setError((err as Error).message);

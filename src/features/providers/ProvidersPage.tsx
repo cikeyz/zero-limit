@@ -48,6 +48,7 @@ import {
 } from '@/features/providers/useProvidersPresenter';
 import { OpenCodeGoCard } from '@/features/providers/OpenCodeGoCard';
 import { GrokCard } from '@/features/providers/GrokCard';
+import { CommandCodeCard } from '@/features/providers/CommandCodeCard';
 
 export function ProvidersPage() {
   const { t } = useTranslation();
@@ -563,6 +564,7 @@ export function ProvidersPage() {
             <div className="pt-2 space-y-2">
                 <OpenCodeGoCard />
                 <GrokCard />
+                <CommandCodeCard />
             </div>
         </section>
 

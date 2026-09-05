@@ -96,6 +96,8 @@ export function ProviderQuotaCard({
           icon = '/opencode-go/opencode-go.svg';
         } else if (lowerProvider.includes('grok') || lowerProvider.includes('xai')) {
           icon = '/grok/grok.svg';
+        } else if (lowerProvider.includes('commandcode') || lowerProvider.includes('command-code')) {
+          icon = '/commandcode/commandcode.svg';
         } else {
           icon = '/openai/openai.png'; // Default fallback
         }

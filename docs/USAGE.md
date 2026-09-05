@@ -65,6 +65,10 @@ The cookie expires periodically; when quota checks start failing with an authent
 
 Grok needs no proxy account. On the **Providers** page, fill in the Grok card with an **xAI console API key** (create one with model access at `x.ai`). ZeroLimit reads credit balances from `GET /v1/api-key` plus rate-limit headers from `GET /v1/models`, shown on the **Quota** page as Credits, Requests, and Tokens. This tracks API-platform credits, not app subscription windows.
 
+### Tracking Command Code usage
+
+Command Code needs no proxy account. On the **Providers** page, fill in the Command Code card with the **API key from `~/.commandcode/auth.json`** (created by `cmd login`, `apiKey` field). ZeroLimit reads the internal usage endpoints (`whoami`, `billing/credits`, `billing/subscriptions`) and shows monthly credits plus live 5-hour and weekly windows on the **Quota** page.
+
 ---
 
 #### Option C: Remote Server
