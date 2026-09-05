@@ -12,6 +12,8 @@ import {
   COPILOT_HEADERS,
   CLAUDE_USAGE_URL,
   CLAUDE_HEADERS,
+  CURSOR_USAGE_URL,
+  CURSOR_HEADERS,
 } from '@/constants';
 import type {
   AntigravityQuotaResult,
@@ -20,6 +22,7 @@ import type {
   KiroQuotaResult,
   CopilotQuotaResult,
   ClaudeQuotaResult,
+  CursorQuotaResult,
 } from '@/types';
 import {
   parseAntigravityModels,
@@ -28,6 +31,7 @@ import {
   parseKiroQuota,
   parseCopilotQuota,
   parseClaudeUsage,
+  parseCursorUsage,
 } from './parsers';
 
 function formatQuotaError(result: { statusCode: number; body?: unknown; bodyText?: string }): string {
@@ -192,6 +196,30 @@ export const quotaApi = {
 
       if (result.statusCode === 401 || result.statusCode === 403) {
         return { models: [], error: 'Token invalid or no Copilot subscription' };
+      }
+
+      return { models: [], error: formatQuotaError(result) };
+    } catch (err) {
+      return { models: [], error: (err as Error).message };
+    }
+  },
+
+  async fetchCursor(authIndex: string): Promise<CursorQuotaResult> {
+    try {
+      const result = await apiCallApi.request({
+        authIndex,
+        method: 'POST',
+        url: CURSOR_USAGE_URL,
+        header: { ...CURSOR_HEADERS },
+        data: '{}'
+      });
+
+      if (result.statusCode >= 200 && result.statusCode < 300) {
+        return parseCursorUsage(result.body);
+      }
+
+      if (result.statusCode === 401 || result.statusCode === 403) {
+        return { models: [], error: 'Token invalid, please re-authenticate' };
       }
 
       return { models: [], error: formatQuotaError(result) };

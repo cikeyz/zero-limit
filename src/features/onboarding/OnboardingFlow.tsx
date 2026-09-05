@@ -345,7 +345,7 @@ export function OnboardingFlow() {
                       </div>
                       <h3 className="text-2xl font-semibold">Plus</h3>
                       <p className="text-center text-muted-foreground text-sm">
-                        The enhanced CLI Proxy API with premium features, enable Github Copilot and Kiro Login.
+                        The enhanced CLI Proxy API with premium features, enable Github Copilot, Kiro and Cursor Login.
                       </p>
                     </CardContent>
                   </Card>

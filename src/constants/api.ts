@@ -14,6 +14,7 @@ export const CODEX_USAGE_URL = 'https://chatgpt.com/backend-api/wham/usage';
 export const KIRO_USAGE_URL = 'https://codewhisperer.us-east-1.amazonaws.com/getUsageLimits?isEmailRequired=true&origin=AI_EDITOR&resourceType=AGENTIC_REQUEST';
 export const COPILOT_ENTITLEMENT_URL = 'https://api.github.com/copilot_internal/user';
 export const CLAUDE_USAGE_URL = 'https://api.anthropic.com/api/oauth/usage';
+export const CURSOR_USAGE_URL = 'https://api2.cursor.sh/aiserver.v1.DashboardService/GetCurrentPeriodUsage';
 
 export const ANTIGRAVITY_HEADERS: Record<string, string> = {
   Authorization: 'Bearer $TOKEN$',
@@ -49,4 +50,10 @@ export const CLAUDE_HEADERS: Record<string, string> = {
   Authorization: 'Bearer $TOKEN$',
   'anthropic-beta': 'oauth-2025-04-20',
   Accept: 'application/json'
+};
+
+export const CURSOR_HEADERS: Record<string, string> = {
+  Authorization: 'Bearer $TOKEN$',
+  'Content-Type': 'application/json',
+  'Connect-Protocol-Version': '1'
 };

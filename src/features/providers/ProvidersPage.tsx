@@ -438,11 +438,13 @@ export function ProvidersPage() {
                                     {/* Normal Auth Flow (Polling/Waiting) - Only if NOT Error and NOT Idle */}
                                     {state.status !== 'idle' && state.status !== 'error' && (
                                         <>
-                                            {/* Copilot Device Code Display */}
-                                            {provider.id === 'copilot' && state.userCode && (
+                                            {/* Device Code Display (Copilot, Cursor) */}
+                                            {state.userCode && (
                                               <div className="space-y-3">
                                                 <p className="text-sm text-muted-foreground">
-                                                  {t('providers.copilotInstructions', 'Enter the code below at GitHub:')}
+                                                  {provider.id === 'copilot'
+                                                    ? t('providers.copilotInstructions', 'Enter the code below at GitHub:')
+                                                    : t('providers.deviceCodeInstructions', 'Enter the code below to authenticate:')}
                                                 </p>
                                                 <div className="flex items-center justify-center gap-3">
                                                   <code className="text-3xl font-mono font-bold tracking-widest bg-muted px-4 py-2 rounded-lg">

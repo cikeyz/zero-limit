@@ -90,6 +90,8 @@ export function ProviderQuotaCard({
           icon = '/kiro/kiro.png';
         } else if (lowerProvider.includes('copilot') || lowerProvider.includes('github')) {
           icon = '/copilot/copilot.png';
+        } else if (lowerProvider.includes('cursor')) {
+          icon = '/cursor/cursor.svg';
         } else {
           icon = '/openai/openai.png'; // Default fallback
         }

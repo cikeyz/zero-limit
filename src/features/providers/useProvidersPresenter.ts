@@ -73,6 +73,7 @@ export function getProviderIconInfo(providerId: string): { path: string; needsIn
   if (id.includes('codex') || id.includes('openai')) return { path: '/openai/openai.png', needsInvert: false };
   if (id.includes('kiro')) return { path: '/kiro/kiro.png', needsInvert: false };
   if (id.includes('copilot') || id.includes('github')) return { path: '/copilot/copilot.png', needsInvert: true };
+  if (id.includes('cursor')) return { path: '/cursor/cursor.svg', needsInvert: false };
   return { path: '', needsInvert: false };
 }
 
@@ -113,6 +114,7 @@ export function useProvidersPresenter() {
     kiro: true,
     copilot: true,
     anthropic: true,
+    cursor: true,
     other: true
   });
 
@@ -124,6 +126,7 @@ export function useProvidersPresenter() {
       kiro: { displayName: 'Kiro (CodeWhisperer)', files: [], iconInfo: { path: '/kiro/kiro.png', needsInvert: false } },
       copilot: { displayName: 'GitHub Copilot', files: [], iconInfo: { path: '/copilot/copilot.png', needsInvert: true } },
       anthropic: { displayName: 'Claude (Anthropic)', files: [], iconInfo: { path: '/claude/claude.png', needsInvert: false } },
+      cursor: { displayName: 'Cursor', files: [], iconInfo: { path: '/cursor/cursor.svg', needsInvert: false } },
       other: { displayName: 'Other', files: [], iconInfo: { path: '', needsInvert: false } }
     };
 
@@ -135,6 +138,7 @@ export function useProvidersPresenter() {
       else if (p.includes('kiro')) groups.kiro.files.push(file);
       else if (p.includes('copilot') || p.includes('github')) groups.copilot.files.push(file);
       else if (p.includes('claude') || p.includes('anthropic')) groups.anthropic.files.push(file);
+      else if (p.includes('cursor')) groups.cursor.files.push(file);
       else groups.other.files.push(file);
     });
 

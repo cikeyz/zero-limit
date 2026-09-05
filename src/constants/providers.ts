@@ -7,13 +7,14 @@ export const PROVIDERS = [
   { id: 'anthropic', name: 'Claude (Anthropic)', requiresProjectId: false },
   { id: 'kiro', name: 'Kiro (CodeWhisperer)', requiresProjectId: false },
   { id: 'copilot', name: 'GitHub Copilot', requiresProjectId: false },
+  { id: 'cursor', name: 'Cursor', requiresProjectId: false },
 ] as const;
 
 export type ProviderId = typeof PROVIDERS[number]['id'];
 
 export const WEBUI_SUPPORTED: OAuthProvider[] = ['codex', 'anthropic', 'antigravity', 'gemini-cli', 'kiro'];
 
-export const PLUS_ONLY_PROVIDERS: ProviderId[] = ['copilot', 'kiro'];
+export const PLUS_ONLY_PROVIDERS: ProviderId[] = ['copilot', 'kiro', 'cursor'];
 
 export const CALLBACK_PROVIDER_MAP: Partial<Record<OAuthProvider, string>> = {
   'gemini-cli': 'gemini'

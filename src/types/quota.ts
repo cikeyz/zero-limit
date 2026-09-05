@@ -44,6 +44,12 @@ export interface CopilotQuotaResult {
   error?: string;
 }
 
+export interface CursorQuotaResult {
+  models: QuotaModel[];
+  plan?: string;
+  error?: string;
+}
+
 export interface FileQuota {
   fileId: string;
   filename: string;

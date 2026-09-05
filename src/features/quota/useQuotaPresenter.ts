@@ -6,7 +6,7 @@ import type { AuthFile, FileQuota, ProviderSection } from '@/types';
 import type { ProviderFilterItem } from '@/features/quota/components/ProviderFilter';
 import { resolveCodexChatgptAccountId, resolveCodexPlanType, resolveGeminiCliProjectId } from '@/shared/utils/quota.helpers';
 
-function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli' | 'kiro' | 'copilot' | 'anthropic' | 'unknown' {
+function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'unknown' {
   const filename = (file?.filename || file?.id || '').toLowerCase();
 
   if (filename.startsWith('antigravity-') || filename.includes('antigravity')) return 'antigravity';
@@ -15,6 +15,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (filename.startsWith('kiro-') || filename.includes('kiro')) return 'kiro';
   if (filename.startsWith('github-copilot-') || filename.includes('copilot')) return 'copilot';
   if (filename.startsWith('claude-') || filename.includes('claude') || filename.includes('anthropic')) return 'anthropic';
+  if (filename.startsWith('cursor-') || filename.includes('cursor')) return 'cursor';
 
   const provider = (file?.provider || '').toLowerCase();
   if (provider.includes('antigravity')) return 'antigravity';
@@ -23,6 +24,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (provider.includes('kiro')) return 'kiro';
   if (provider.includes('copilot') || provider.includes('github')) return 'copilot';
   if (provider.includes('claude') || provider.includes('anthropic')) return 'anthropic';
+  if (provider.includes('cursor')) return 'cursor';
 
   return 'unknown';
 }
@@ -38,6 +40,7 @@ const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
   kiro: { path: '/kiro/kiro.png', needsInvert: false },
   copilot: { path: '/copilot/copilot.png', needsInvert: true },
   anthropic: { path: '/claude/claude.png', needsInvert: false },
+  cursor: { path: '/cursor/cursor.svg', needsInvert: false },
 };
 
 const PROVIDER_DISPLAY: { key: string; name: string }[] = [
@@ -47,6 +50,7 @@ const PROVIDER_DISPLAY: { key: string; name: string }[] = [
   { key: 'kiro', name: 'Kiro (CodeWhisperer)' },
   { key: 'copilot', name: 'GitHub Copilot' },
   { key: 'anthropic', name: 'Claude (Anthropic)' },
+  { key: 'cursor', name: 'Cursor' },
   { key: 'unknown', name: 'Other' },
 ];
 
@@ -162,6 +166,14 @@ export function useQuotaPresenter() {
             ...f, loading: false, email: result.email, models: result.models, error: result.error
           } : f)
         } : s));
+      } else if (targetProvider === 'cursor') {
+        const result = await quotaApi.fetchCursor(authIndex);
+        setSections((prev) => prev.map(s => s.provider === 'cursor' ? {
+          ...s,
+          files: s.files.map(f => f.fileId === fileId ? {
+            ...f, loading: false, plan: result.plan, models: result.models, error: result.error
+          } : f)
+        } : s));
       }
     } catch (err) {
       const msg = (err as Error).message;
@@ -183,7 +195,7 @@ export function useQuotaPresenter() {
       const files: AuthFile[] = Array.isArray(resp) ? resp : (resp as any).items || (resp as any).files || [];
 
       const grouped: Record<string, FileQuota[]> = {
-        antigravity: [], codex: [], 'gemini-cli': [], kiro: [], copilot: [], anthropic: [], unknown: []
+        antigravity: [], codex: [], 'gemini-cli': [], kiro: [], copilot: [], anthropic: [], cursor: [], unknown: []
       };
 
       files.forEach((file) => {
