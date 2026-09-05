@@ -11,6 +11,7 @@ import { PLUS_ONLY_PROVIDERS } from '@/constants';
 import { useCliProxyStore } from '@/features/settings/cliProxy.store';
 import { useOpenCodeGoStore, notifyAccountsChanged } from './opencodeGo.store';
 import { useCommandCodeStore } from './commandcode.store';
+import { useXaiStore } from './xai.store';
 
 export function detectIsPlusVersion(serverVersion: string | null | undefined): boolean | null {
   if (!serverVersion) return null;
@@ -72,7 +73,7 @@ export function getProviderIconInfo(providerId: string): { path: string; needsIn
   if (id.includes('antigravity')) return { path: '/antigravity/antigravity.svg', needsInvert: true };
   if (id.includes('claude') || id.includes('anthropic')) return { path: '/claude/claude.png', needsInvert: false };
   if (id.includes('gemini')) return { path: '/gemini/gemini.png', needsInvert: false };
-  if (id.includes('opencode-go') || id.includes('opencode go')) return { path: '/opencode-go/opencode-go.svg', needsInvert: false };
+  if (id.includes('opencode-go') || id.includes('opencode go')) return { path: '/opencode-go/opencode-go.svg', needsInvert: true };
   if (id.includes('codex') || id.includes('openai')) return { path: '/openai/openai.svg', needsInvert: true };
   if (id.includes('kiro')) return { path: '/kiro/kiro.png', needsInvert: false };
   if (id.includes('copilot') || id.includes('github')) return { path: '/copilot/copilot.png', needsInvert: true };
@@ -80,6 +81,7 @@ export function getProviderIconInfo(providerId: string): { path: string; needsIn
   if (id.includes('commandcode') || id.includes('command-code') || id.includes('command code')) {
     return { path: '/commandcode/commandcode.svg', needsInvert: false };
   }
+  if (id.includes('grok') || id.includes('xai')) return { path: '/grok/grok.svg', needsInvert: true };
   return { path: '', needsInvert: false };
 }
 
@@ -121,6 +123,7 @@ export function useProvidersPresenter() {
     copilot: false,
     anthropic: false,
     cursor: false,
+    grok: false,
     'opencode-go': false,
     commandcode: false,
     other: false
@@ -132,6 +135,8 @@ export function useProvidersPresenter() {
   const goWorkspaceId = useOpenCodeGoStore((s) => s.workspaceId);
   const goAuthCookie = useOpenCodeGoStore((s) => s.authCookie);
   const commandCodeApiKey = useCommandCodeStore((s) => s.apiKey);
+  const grokApiKey = useXaiStore((s) => s.apiKey);
+  const grokCliKey = useXaiStore((s) => s.cliKey);
 
   const groupedFiles = useMemo(() => {
     const groups: Record<string, { displayName: string; files: AuthFile[]; iconInfo: { path: string; needsInvert: boolean } }> = {
@@ -142,7 +147,8 @@ export function useProvidersPresenter() {
       copilot: { displayName: 'GitHub Copilot', files: [], iconInfo: { path: '/copilot/copilot.png', needsInvert: true } },
       anthropic: { displayName: 'Claude (Anthropic)', files: [], iconInfo: { path: '/claude/claude.png', needsInvert: false } },
       cursor: { displayName: 'Cursor', files: [], iconInfo: { path: '/cursor/cursor.svg', needsInvert: true } },
-      'opencode-go': { displayName: 'OpenCode Go', files: [], iconInfo: { path: '/opencode-go/opencode-go.svg', needsInvert: false } },
+      grok: { displayName: 'Grok', files: [], iconInfo: { path: '/grok/grok.svg', needsInvert: true } },
+      'opencode-go': { displayName: 'OpenCode Go', files: [], iconInfo: { path: '/opencode-go/opencode-go.svg', needsInvert: true } },
       commandcode: { displayName: 'Command Code', files: [], iconInfo: { path: '/commandcode/commandcode.svg', needsInvert: false } },
       other: { displayName: 'Other', files: [], iconInfo: { path: '', needsInvert: false } }
     };
@@ -181,17 +187,30 @@ export function useProvidersPresenter() {
         syntheticKind: 'commandcode',
       });
     }
+    if (grokApiKey || grokCliKey) {
+      groups.grok.files.push({
+        id: 'synthetic-grok',
+        filename: 'grok-manual',
+        provider: 'grok',
+        account: 'Grok',
+        isSynthetic: true,
+        syntheticKind: 'grok',
+      });
+    }
 
     return Object.entries(groups).filter(([, group]) => group.files.length > 0);
-  }, [files, goApiKey, goWorkspaceId, goAuthCookie, commandCodeApiKey]);
+  }, [files, goApiKey, goWorkspaceId, goAuthCookie, commandCodeApiKey, grokApiKey, grokCliKey]);
 
   const toggleProviderExpanded = useCallback((providerId: string) => {
     setExpandedProviders(prev => ({ ...prev, [providerId]: !prev[providerId] }));
   }, []);
 
-  const disconnectSyntheticProvider = useCallback((kind: 'opencode-go' | 'commandcode') => {
+  const disconnectSyntheticProvider = useCallback((kind: 'opencode-go' | 'commandcode' | 'grok') => {
     if (kind === 'opencode-go') {
       useOpenCodeGoStore.getState().clearCredentials();
+    } else if (kind === 'grok') {
+      useXaiStore.getState().clearApiKey();
+      useXaiStore.getState().clearCliSession();
     } else {
       useCommandCodeStore.getState().clearApiKey();
     }

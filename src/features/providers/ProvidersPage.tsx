@@ -317,8 +317,8 @@ export function ProvidersPage() {
                               // Synthetic manual-tracker rows have no auth file: no
                               // download/copy-token actions, delete disconnects instead.
                               const rawKind = file.syntheticKind;
-                              const syntheticKind: 'opencode-go' | 'commandcode' | null =
-                                rawKind === 'opencode-go' || rawKind === 'commandcode' ? rawKind : null;
+                              const syntheticKind: 'opencode-go' | 'commandcode' | 'grok' | null =
+                                rawKind === 'opencode-go' || rawKind === 'commandcode' || rawKind === 'grok' ? rawKind : null;
                               const isSynthetic = file.isSynthetic === true || syntheticKind !== null;
 
                              return (
