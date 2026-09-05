@@ -38,7 +38,7 @@ Built with **Tauri + React + Rust**, ZeroLimit runs on **Windows**, **macOS**, a
 |----------|-------------|
 | Google Gemini | OAuth |
 | Anthropic Claude | OAuth |
-| OpenAI Codex | OAuth |
+| Codex | OAuth |
 | Antigravity | OAuth |
 | Kiro | OAuth |
 | Github Copilot | OAuth |
