@@ -131,7 +131,7 @@ export function CompactQuotaCard({
       {/* Model badges grid with progress bars - expanded view */}
       {!loading && !error && !isSuspended && isExpanded && (
         <div className="grid grid-cols-1 gap-2 flex-1">
-          {groupedItems.map((group, idx) => (
+          {groupedItems.filter(g => !g.items.every(i => i.separate)).map((group, idx) => (
             <div key={idx} className="space-y-1">
               {/* Model info row */}
               <div className="flex items-center gap-1 text-xs min-w-0">
@@ -155,13 +155,30 @@ export function CompactQuotaCard({
               </div>
             </div>
           ))}
+          {groupedItems.filter(g => g.items.length > 0 && g.items.every(i => i.separate)).map((group, idx) => (
+            <div key={`burn-${idx}`} className="space-y-1 border-t pt-2">
+              <div className="text-[10px] font-semibold uppercase tracking-wider text-muted-foreground">
+                {t('quotaCard.totalBurn', 'Total burn')}
+              </div>
+              {group.items.map((item, itemIdx) => (
+                <div key={itemIdx} className="flex items-center justify-between gap-2 min-w-0">
+                  <span className="text-muted-foreground font-medium truncate flex-1" title={item.name}>{item.name}</span>
+                  {item.displayValue && (
+                    <span className="font-bold text-sm flex-shrink-0">{item.displayValue}</span>
+                  )}
+                </div>
+              ))}
+            </div>
+          ))}
         </div>
       )}
 
       {/* Collapsed compact summary view - simple inline text */}
+
+      {/* Collapsed compact summary view - simple inline text */}
       {!loading && !error && !isSuspended && !isExpanded && (
         <div className="text-xs text-muted-foreground space-y-1">
-          {groupedItems.map((group, idx) => (
+          {groupedItems.filter(g => !g.items.every(i => i.separate)).map((group, idx) => (
             <div key={idx} className="flex items-center justify-between gap-2 min-w-0">
               <span className="font-medium truncate flex-1" title={group.name}>{group.name}</span>
               <div className="flex items-center gap-2 flex-shrink-0">
@@ -173,6 +190,16 @@ export function CompactQuotaCard({
                     <Clock className="h-2.5 w-2.5" />
                     {group.resetTime}
                   </span>
+                )}
+              </div>
+            </div>
+          ))}
+          {groupedItems.filter(g => g.items.length > 0 && g.items.every(i => i.separate)).map((group, idx) => (
+            <div key={`burn-${idx}`} className="flex items-center justify-between gap-2 min-w-0">
+              <span className="font-medium truncate flex-1" title={group.name}>{group.name}</span>
+              <div className="flex items-center gap-2 flex-shrink-0">
+                {group.items[0]?.displayValue && (
+                  <span className="font-bold">{group.items[0].displayValue}</span>
                 )}
               </div>
             </div>
@@ -221,21 +248,27 @@ export function CompactQuotaCard({
                             <span className="font-medium text-sm truncate max-w-[180px]" title={item.name}>
                               {item.name}
                             </span>
-                            <span className={`font-bold text-sm ${getPercentColor(item.used ? 100 - item.percentage : item.percentage)}`}>
-                              {item.percentage}{item.used ? '% used' : '%'}
-                            </span>
+                            {item.separate && item.displayValue ? (
+                              <span className="text-base font-bold">{item.displayValue}</span>
+                            ) : (
+                              <span className={`font-bold text-sm ${getPercentColor(item.used ? 100 - item.percentage : item.percentage)}`}>
+                                {item.percentage}{item.used ? '% used' : '%'}
+                              </span>
+                            )}
                           </div>
-                          {item.displayValue && (
+                          {item.displayValue && !item.separate && (
                             <div className="text-xs text-muted-foreground">
                               {item.displayValue}
                             </div>
                           )}
-                          <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                            <div
-                              className={`h-full rounded-full ${getProgressColor(item.used ? 100 - item.percentage : item.percentage)}`}
-                              style={{ width: `${item.percentage}%` }}
-                            />
-                          </div>
+                          {!item.separate && (
+                            <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                              <div
+                                className={`h-full rounded-full ${getProgressColor(item.used ? 100 - item.percentage : item.percentage)}`}
+                                style={{ width: `${item.percentage}%` }}
+                              />
+                            </div>
+                          )}
                           {item.resetTime && (
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />

@@ -228,21 +228,27 @@ export function ProviderQuotaCard({
                                                     <span className="font-medium text-sm truncate max-w-[180px]" title={item.name}>
                                                         {item.name}
                                                     </span>
-                                                    <span className={`font-bold text-sm ${item.used ? (item.percentage < 80 ? 'text-green-500' : 'text-yellow-500') : (item.percentage > 20 ? 'text-green-500' : 'text-yellow-500')}`}>
-                                                        {item.percentage}{item.used ? '% used' : '%'}
-                                                    </span>
+                                                    {item.separate && item.displayValue ? (
+                                                        <span className="text-lg font-bold">{item.displayValue}</span>
+                                                    ) : (
+                                                        <span className={`font-bold text-sm ${item.used ? (item.percentage < 80 ? 'text-green-500' : 'text-yellow-500') : (item.percentage > 20 ? 'text-green-500' : 'text-yellow-500')}`}>
+                                                            {item.percentage}{item.used ? '% used' : '%'}
+                                                        </span>
+                                                    )}
                                                 </div>
-                                                {item.displayValue && (
+                                                {item.displayValue && !item.separate && (
                                                     <div className="text-xs text-muted-foreground">
                                                         {item.displayValue}
                                                     </div>
                                                 )}
-                                                <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
-                                                    <div
-                                                        className={`h-full rounded-full ${item.used ? (item.percentage < 80 ? 'bg-green-500' : 'bg-yellow-500') : (item.percentage > 20 ? 'bg-green-500' : 'bg-yellow-500')}`}
-                                                        style={{ width: `${item.percentage}%` }}
-                                                    />
-                                                </div>
+                                                {!item.separate && (
+                                                    <div className="h-1.5 w-full overflow-hidden rounded-full bg-secondary">
+                                                        <div
+                                                            className={`h-full rounded-full ${item.used ? (item.percentage < 80 ? 'bg-green-500' : 'bg-yellow-500') : (item.percentage > 20 ? 'bg-green-500' : 'bg-yellow-500')}`}
+                                                            style={{ width: `${item.percentage}%` }}
+                                                        />
+                                                    </div>
+                                                )}
                                                 {item.resetTime && (
                                                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                                         <Clock className="h-3 w-3" />
@@ -286,7 +292,7 @@ export function ProviderQuotaCard({
                   </div>
                 )}
 
-                {!isSuspended && groupedItems.map((group, idx) => (
+                {!isSuspended && groupedItems.filter(g => !g.items.every(i => i.separate)).map((group, idx) => (
                     <div key={idx} className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
                             <div className="flex items-center gap-2">
@@ -317,6 +323,36 @@ export function ProviderQuotaCard({
                                 style={{ width: `${group.percentage}%` }}
                             />
                         </div>
+                    </div>
+                ))}
+                {!isSuspended && groupedItems.filter(g => g.items.length > 0 && g.items.every(i => i.separate)).map((group, idx) => (
+                    <div key={`burn-${idx}`} className="space-y-2 border-t pt-3">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
+                            {t('quotaCard.totalBurn', 'Total burn')}
+                        </div>
+                        {group.items.map((item, itemIdx) => (
+                            <div key={itemIdx} className="flex items-center justify-between gap-2">
+                                <div className="flex items-center gap-2 min-w-0">
+                                    {group.icon ? (
+                                        <img src={group.icon} className={`h-4 w-4 opacity-80 ${group.needsInvert ? 'dark:invert' : ''}`} alt={group.name} />
+                                    ) : (
+                                        <div className="h-4 w-4" />
+                                    )}
+                                    <span className="font-medium text-sm truncate" title={item.name}>{item.name}</span>
+                                </div>
+                                <div className="flex items-center gap-2 flex-shrink-0">
+                                    {item.displayValue && (
+                                        <span className="text-lg font-bold">{item.displayValue}</span>
+                                    )}
+                                    {item.resetTime && (
+                                        <div className="flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-xs text-muted-foreground">
+                                            <Clock className="h-3 w-3" />
+                                            <span>{item.resetTime}</span>
+                                        </div>
+                                    )}
+                                </div>
+                            </div>
+                        ))}
                     </div>
                 ))}
             </div>

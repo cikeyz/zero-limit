@@ -94,7 +94,7 @@ export function parseOfficialUsage(body: unknown): OpenCodeGoQuotaResult {
     return { models: [], error: 'Unexpected OpenCode Go response shape' };
   }
   const models: QuotaModel[] = [];
-  for (const [name, key, sortOrder] of [['Rolling', 'rolling', 1], ['Weekly', 'weekly', 2], ['Monthly', 'monthly', 3]] as const) {
+  for (const [name, key, sortOrder] of [['5-Hour', 'rolling', 1], ['Weekly', 'weekly', 2], ['Monthly', 'monthly', 3]] as const) {
     const model = officialModel(name, usage[key], sortOrder);
     if (model) models.push(model);
   }
@@ -194,7 +194,7 @@ function extractWindow(html: string, field: string): { quotaPercent: number; res
 export function parseOpenCodeGoPage(html: string): OpenCodeGoQuotaResult {
   const nowSec = Math.floor(Date.now() / 1000);
   const found = [
-    { name: 'Rolling', window: extractWindow(html, 'rollingUsage') },
+    { name: '5-Hour', window: extractWindow(html, 'rollingUsage') },
     { name: 'Weekly', window: extractWindow(html, 'weeklyUsage') },
     { name: 'Monthly', window: extractWindow(html, 'monthlyUsage') },
   ].filter((w): w is { name: string; window: { quotaPercent: number; resetInSec: number } } => w.window !== null);
@@ -209,66 +209,79 @@ export function parseOpenCodeGoPage(html: string): OpenCodeGoQuotaResult {
       percentage: Math.min(100, Math.max(0, window.quotaPercent)),
       resetTime: formatTimeUntil(nowSec + window.resetInSec),
       used: true,
-      sortOrder: name === 'Rolling' ? 1 : name === 'Weekly' ? 2 : 3,
+      sortOrder: name === '5-Hour' ? 1 : name === 'Weekly' ? 2 : 3,
     })),
   };
 }
 
 export const opencodeGoApi = {
+  // Cookie page first when available (1-decimal precision); official API
+  // otherwise (stable floored integers). Falls through on cookie failure.
   async fetchQuota(creds: OpenCodeGoCredentials): Promise<OpenCodeGoQuotaResult> {
-    const apiKey = (creds.apiKey || '').trim();
-    if (apiKey) {
-      try {
-        const result = await apiCallApi.request({
-          method: 'GET',
-          url: OFFICIAL_USAGE_URL,
-          header: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
-        });
-        if (result.statusCode === 401 || result.statusCode === 403) {
-          return { models: [], error: 'OpenCode Go API key invalid. Re-detect or check your OpenCode login.' };
-        }
-        if (result.statusCode < 200 || result.statusCode >= 300) {
-          return { models: [], error: `OpenCode Go request failed (HTTP ${result.statusCode})` };
-        }
-        return parseOfficialUsage(result.body);
-      } catch (err) {
-        return { models: [], error: (err as Error).message };
-      }
-    }
-
     const wid = extractWorkspaceId(creds.workspaceId || '');
     const cookie = (creds.authCookie || '').trim();
-    if (!wid || !cookie) {
+    if (wid && cookie) {
+      const scraped = await fetchQuotaByCookie(wid, cookie);
+      if (scraped.models.length > 0 && !scraped.error) return scraped;
+      // Cookie dead (expired?) — fall through to the official API below.
+      const apiKey = (creds.apiKey || '').trim();
+      if (!apiKey) return scraped;
+    }
+
+    const apiKey = (creds.apiKey || '').trim();
+    if (!apiKey) {
       return { models: [], error: 'OpenCode Go is not connected' };
     }
-
-    try {
-      const result = await apiCallApi.request({
-        method: 'GET',
-        url: `https://opencode.ai/workspace/${encodeURIComponent(wid)}/go`,
-        header: {
-          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          Cookie: `auth=${cookie}`,
-          'User-Agent': 'zerolimit-opencode-go',
-        },
-      });
-
-      if (result.statusCode === 401 || result.statusCode === 403) {
-        return { models: [], error: 'OpenCode Go authentication failed. Refresh your auth cookie.' };
-      }
-
-      if (result.statusCode < 200 || result.statusCode >= 300) {
-        return { models: [], error: `OpenCode Go request failed (HTTP ${result.statusCode})` };
-      }
-
-      const html = result.bodyText || (typeof result.body === 'string' ? result.body : '');
-      if (!html) {
-        return { models: [], error: 'Empty response from OpenCode Go page' };
-      }
-
-      return parseOpenCodeGoPage(html);
-    } catch (err) {
-      return { models: [], error: (err as Error).message };
-    }
+    return fetchQuotaByApiKey(apiKey);
   },
 };
+
+async function fetchQuotaByApiKey(apiKey: string): Promise<OpenCodeGoQuotaResult> {
+  try {
+    const result = await apiCallApi.request({
+      method: 'GET',
+      url: OFFICIAL_USAGE_URL,
+      header: { Authorization: `Bearer ${apiKey}`, Accept: 'application/json' },
+    });
+    if (result.statusCode === 401 || result.statusCode === 403) {
+      return { models: [], error: 'OpenCode Go API key invalid. Re-detect or check your OpenCode login.' };
+    }
+    if (result.statusCode < 200 || result.statusCode >= 300) {
+      return { models: [], error: `OpenCode Go request failed (HTTP ${result.statusCode})` };
+    }
+    return parseOfficialUsage(result.body);
+  } catch (err) {
+    return { models: [], error: (err as Error).message };
+  }
+}
+
+async function fetchQuotaByCookie(wid: string, cookie: string): Promise<OpenCodeGoQuotaResult> {
+  try {
+    const result = await apiCallApi.request({
+      method: 'GET',
+      url: `https://opencode.ai/workspace/${encodeURIComponent(wid)}/go`,
+      header: {
+        Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+        Cookie: `auth=${cookie}`,
+        'User-Agent': 'zerolimit-opencode-go',
+      },
+    });
+
+    if (result.statusCode === 401 || result.statusCode === 403) {
+      return { models: [], error: 'OpenCode Go authentication failed. Refresh your auth cookie.' };
+    }
+
+    if (result.statusCode < 200 || result.statusCode >= 300) {
+      return { models: [], error: `OpenCode Go request failed (HTTP ${result.statusCode})` };
+    }
+
+    const html = result.bodyText || (typeof result.body === 'string' ? result.body : '');
+    if (!html) {
+      return { models: [], error: 'Empty response from OpenCode Go page' };
+    }
+
+    return parseOpenCodeGoPage(html);
+  } catch (err) {
+    return { models: [], error: (err as Error).message };
+  }
+}

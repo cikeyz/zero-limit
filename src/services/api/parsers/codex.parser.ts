@@ -42,10 +42,10 @@ export function parseCodexUsage(body: unknown): CodexQuotaResult {
 
   if (payload.rate_limit && typeof payload.rate_limit === 'object') {
     const rl = payload.rate_limit as Record<string, any>;
-    processWindow('5-hour limit', rl.primary_window ?? rl.primaryWindow);
+    processWindow('5-Hour limit', rl.primary_window ?? rl.primaryWindow);
     processWindow('Weekly limit', rl.secondary_window ?? rl.secondaryWindow);
   } else {
-    processWindow('5-hour limit', (payload['5_hour_window'] ?? payload.fiveHourWindow) as CodexUsageWindow);
+    processWindow('5-Hour limit', (payload['5_hour_window'] ?? payload.fiveHourWindow) as CodexUsageWindow);
     processWindow('Weekly limit', (payload['weekly_window'] ?? payload.weeklyWindow) as CodexUsageWindow);
   }
 

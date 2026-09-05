@@ -145,7 +145,7 @@ export function parseAntigravitySummary(body: unknown): QuotaModel[] {
       const label = isWeekly
         ? 'Weekly'
         : window.includes('5h') || window.includes('5-h') || window.includes('hour')
-          ? '5-hour'
+          ? '5-Hour'
           : (typeof bucket.displayName === 'string' && bucket.displayName) || window || 'Quota';
       const reset = bucket.resetTime ?? bucket.reset_time;
       models.push({

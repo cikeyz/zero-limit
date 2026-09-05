@@ -65,7 +65,7 @@ export function parseCommandCodeQuota(
   };
 
   if (cred && limited && windows) {
-    pushWindow('5-hour window', windows.fiveHour, 1);
+    pushWindow('5-Hour window', windows.fiveHour, 1);
     pushWindow('Weekly window', windows.weekly, 2);
   }
 
@@ -151,15 +151,11 @@ export const commandcodeApi = {
       const creditsBody = credits.status >= 200 && credits.status < 300 ? credits.body : null;
       const subsBody = subscriptions.status >= 200 && subscriptions.status < 300 ? subscriptions.body : null;
 
-      // Month-to-date totals for pool derivation (best effort, never fatal).
+      // Billing-period totals for pool derivation (best effort, never fatal).
+      // No `since` param: unfiltered summary matches the Studio Overview.
       let summaryBody: unknown = null;
       try {
-        const sub = (subsBody ?? null) as Record<string, unknown> | null;
-        const data = sub?.data as Record<string, unknown> | undefined;
-        const start = typeof data?.currentPeriodStart === 'string' && data.currentPeriodStart
-          ? data.currentPeriodStart
-          : `${new Date().toISOString().slice(0, 8)}01T00:00:00.000Z`;
-        const summary = await getJson(key, `/alpha/usage/summary?since=${encodeURIComponent(start)}`);
+        const summary = await getJson(key, '/alpha/usage/summary');
         if (summary.status >= 200 && summary.status < 300) summaryBody = summary.body;
       } catch {
         // Totals are informational; windows above are the core result.
