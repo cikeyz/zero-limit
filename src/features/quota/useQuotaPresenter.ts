@@ -119,17 +119,24 @@ export function useQuotaPresenter() {
     }));
 
     try {
+      // Manual-credential providers have no proxy auth file: skip file lookup.
+      const isManualProvider =
+        targetProvider === 'opencode-go' || targetProvider === 'grok' || targetProvider === 'commandcode';
+
+      let authIndex = '';
       let file = providedFile;
-      if (!file) {
-        const section = sections.find(s => s.provider === targetProvider);
-        const fileQuota = section?.files.find(f => f.fileId === fileId);
-        file = fileQuota?.originalFile;
+      if (!isManualProvider) {
+        if (!file) {
+          const section = sections.find(s => s.provider === targetProvider);
+          const fileQuota = section?.files.find(f => f.fileId === fileId);
+          file = fileQuota?.originalFile;
+        }
+
+        if (!file) throw new Error('File not found');
+
+        authIndex = (file['auth_index'] as string) || (file['authIndex'] as string) || file.id || file.filename;
+        if (!authIndex) throw new Error('No auth index (auth_index, id or filename) found');
       }
-
-      if (!file) throw new Error('File not found');
-
-      const authIndex = (file['auth_index'] as string) || (file['authIndex'] as string) || file.id || file.filename;
-      if (!authIndex) throw new Error('No auth index (auth_index, id or filename) found');
 
       if (targetProvider === 'antigravity') {
         const result = await quotaApi.fetchAntigravity(authIndex);
@@ -284,58 +291,40 @@ export function useQuotaPresenter() {
       const { apiKey: goApiKey, workspaceId: goWorkspaceId, authCookie: goAuthCookie } = useOpenCodeGoStore.getState();
       const goConnected = Boolean(goApiKey || (goWorkspaceId && goAuthCookie));
       if (goConnected) {
-        setSections((prev) => [
-          ...prev,
-          {
-            provider: 'opencode-go',
-            displayName: 'OpenCode Go',
-            files: [{
-              fileId: 'opencode-go',
-              filename: 'OpenCode Go',
-              provider: 'OpenCode Go',
-              providerKey: 'opencode-go',
-              loading: false,
-            }],
-          },
-        ]);
+        const goFile: FileQuota = {
+          fileId: 'opencode-go',
+          filename: 'OpenCode Go',
+          provider: 'OpenCode Go',
+          providerKey: 'opencode-go',
+          loading: false,
+        };
+        setSections((prev) => prev.map((s) => (s.provider === 'opencode-go' ? { ...s, files: [goFile] } : s)));
       }
 
       const { apiKey: xaiApiKey, cliKey: grokCliKey } = useXaiStore.getState();
       const grokConnected = Boolean(xaiApiKey || grokCliKey);
       if (grokConnected) {
-        setSections((prev) => [
-          ...prev,
-          {
-            provider: 'grok',
-            displayName: 'Grok (xAI)',
-            files: [{
-              fileId: 'grok',
-              filename: 'Grok',
-              provider: 'Grok',
-              providerKey: 'grok',
-              loading: false,
-            }],
-          },
-        ]);
+        const grokFile: FileQuota = {
+          fileId: 'grok',
+          filename: 'Grok',
+          provider: 'Grok',
+          providerKey: 'grok',
+          loading: false,
+        };
+        setSections((prev) => prev.map((s) => (s.provider === 'grok' ? { ...s, files: [grokFile] } : s)));
       }
 
       const { apiKey: commandcodeApiKey } = useCommandCodeStore.getState();
       const commandcodeConnected = Boolean(commandcodeApiKey);
       if (commandcodeConnected) {
-        setSections((prev) => [
-          ...prev,
-          {
-            provider: 'commandcode',
-            displayName: 'Command Code',
-            files: [{
-              fileId: 'commandcode',
-              filename: 'Command Code',
-              provider: 'Command Code',
-              providerKey: 'commandcode',
-              loading: false,
-            }],
-          },
-        ]);
+        const ccFile: FileQuota = {
+          fileId: 'commandcode',
+          filename: 'Command Code',
+          provider: 'Command Code',
+          providerKey: 'commandcode',
+          loading: false,
+        };
+        setSections((prev) => prev.map((s) => (s.provider === 'commandcode' ? { ...s, files: [ccFile] } : s)));
       }
 
       files.forEach((file) => {
