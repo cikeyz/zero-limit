@@ -55,6 +55,12 @@ export interface OpenCodeGoQuotaResult {
   error?: string;
 }
 
+export interface GrokQuotaResult {
+  models: QuotaModel[];
+  keyName?: string;
+  error?: string;
+}
+
 export interface FileQuota {
   fileId: string;
   filename: string;

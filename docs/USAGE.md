@@ -61,6 +61,10 @@ OpenCode Go needs no proxy account. On the **Providers** page, fill in the OpenC
 
 The cookie expires periodically; when quota checks start failing with an authentication error, paste a fresh cookie. Usage appears on the **Quota** page as Rolling, Weekly, and Monthly windows.
 
+### Tracking Grok (xAI) usage
+
+Grok needs no proxy account. On the **Providers** page, fill in the Grok card with an **xAI console API key** (create one with model access at `x.ai`). ZeroLimit reads credit balances from `GET /v1/api-key` plus rate-limit headers from `GET /v1/models`, shown on the **Quota** page as Credits, Requests, and Tokens. This tracks API-platform credits, not app subscription windows.
+
 ---
 
 #### Option C: Remote Server

@@ -17,13 +17,13 @@ A cross-platform AI coding assistant quota tracker
 
 ## 🎯 What is ZeroLimit?
 
-ZeroLimit is a **cross-platform desktop application** for monitoring AI coding assistant quotas using [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI). Track your usage across Antigravity, Anthropic Claude, Codex (OpenAI), Gemini CLI, Kiro, GitHub Copilot, Cursor, and OpenCode Go accounts in one dashboard.
+ZeroLimit is a **cross-platform desktop application** for monitoring AI coding assistant quotas using [CLIProxyAPI](https://github.com/router-for-me/CLIProxyAPI). Track your usage across Antigravity, Anthropic Claude, Codex (OpenAI), Gemini CLI, Kiro, GitHub Copilot, Cursor, OpenCode Go, and Grok (xAI) accounts in one dashboard.
 
 Built with **Tauri + React + Rust**, ZeroLimit runs on **Windows**, **macOS**, and **Linux**.
 
 ## 🚀 Key Features
 
-- 🔌 **Multi-Provider Support** - Monitor Gemini, Claude, OpenAI, Antigravity, Kiro, Copilot, Cursor, and OpenCode Go accounts
+- 🔌 **Multi-Provider Support** - Monitor Gemini, Claude, OpenAI, Antigravity, Kiro, Copilot, Cursor, OpenCode Go, and Grok accounts
 - 📊 **Real-time Quota Dashboard** - Track usage per account with visual progress bars
 - 🖥️ **System Tray Integration** - Quick access from your taskbar
 - ⚡ **One-Click Proxy Control** - Start/stop CLIProxyAPI with a single click
@@ -44,6 +44,7 @@ Built with **Tauri + React + Rust**, ZeroLimit runs on **Windows**, **macOS**, a
 | Github Copilot | OAuth |
 | Cursor | OAuth (requires CLIProxyAPI Plus binary) |
 | OpenCode Go | Workspace ID + auth cookie |
+| Grok (xAI) | xAI console API key |
 
 ## 📦 Installation
 

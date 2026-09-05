@@ -7,8 +7,10 @@ import type { ProviderFilterItem } from '@/features/quota/components/ProviderFil
 import { resolveCodexChatgptAccountId, resolveCodexPlanType, resolveGeminiCliProjectId } from '@/shared/utils/quota.helpers';
 import { useOpenCodeGoStore } from '@/features/providers/opencodeGo.store';
 import { opencodeGoApi } from '@/services/api/opencodeGo.service';
+import { useXaiStore } from '@/features/providers/xai.store';
+import { xaiApi } from '@/services/api/xai.service';
 
-function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'opencode-go' | 'unknown' {
+function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'opencode-go' | 'grok' | 'unknown' {
   const filename = (file?.filename || file?.id || '').toLowerCase();
 
   if (filename.startsWith('antigravity-') || filename.includes('antigravity')) return 'antigravity';
@@ -19,6 +21,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (filename.startsWith('claude-') || filename.includes('claude') || filename.includes('anthropic')) return 'anthropic';
   if (filename.startsWith('cursor-') || filename.includes('cursor')) return 'cursor';
   if (filename.includes('opencode')) return 'opencode-go';
+  if (filename.includes('grok') || filename.includes('xai')) return 'grok';
 
   const provider = (file?.provider || '').toLowerCase();
   if (provider.includes('antigravity')) return 'antigravity';
@@ -29,6 +32,7 @@ function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'gemini-cli'
   if (provider.includes('claude') || provider.includes('anthropic')) return 'anthropic';
   if (provider.includes('cursor')) return 'cursor';
   if (provider.includes('opencode')) return 'opencode-go';
+  if (provider.includes('grok') || provider.includes('xai')) return 'grok';
 
   return 'unknown';
 }
@@ -46,6 +50,7 @@ const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
   anthropic: { path: '/claude/claude.png', needsInvert: false },
   cursor: { path: '/cursor/cursor.svg', needsInvert: false },
   'opencode-go': { path: '/opencode-go/opencode-go.svg', needsInvert: false },
+  grok: { path: '/grok/grok.svg', needsInvert: false },
 };
 
 const PROVIDER_DISPLAY: { key: string; name: string }[] = [
@@ -57,6 +62,7 @@ const PROVIDER_DISPLAY: { key: string; name: string }[] = [
   { key: 'anthropic', name: 'Claude (Anthropic)' },
   { key: 'cursor', name: 'Cursor' },
   { key: 'opencode-go', name: 'OpenCode Go' },
+  { key: 'grok', name: 'Grok (xAI)' },
   { key: 'unknown', name: 'Other' },
 ];
 
@@ -75,6 +81,8 @@ export function useQuotaPresenter() {
     const maybeQuota = providedFile as unknown as FileQuota | undefined;
     if (fileId === 'opencode-go' || maybeQuota?.providerKey === 'opencode-go') {
       targetProvider = 'opencode-go';
+    } else if (fileId === 'grok' || maybeQuota?.providerKey === 'grok') {
+      targetProvider = 'grok';
     }
 
     if (providedFile) {
@@ -195,6 +203,16 @@ export function useQuotaPresenter() {
             ...f, loading: false, models: result.models, error: result.error
           } : f)
         } : s));
+      } else if (targetProvider === 'grok') {
+        const { apiKey } = useXaiStore.getState();
+        if (!apiKey) throw new Error('Grok is not connected');
+        const result = await xaiApi.fetchQuota(apiKey);
+        setSections((prev) => prev.map(s => s.provider === 'grok' ? {
+          ...s,
+          files: s.files.map(f => f.fileId === fileId ? {
+            ...f, loading: false, models: result.models, error: result.error
+          } : f)
+        } : s));
       }
     } catch (err) {
       const msg = (err as Error).message;
@@ -259,6 +277,25 @@ export function useQuotaPresenter() {
         ]);
       }
 
+      const { apiKey: xaiApiKey } = useXaiStore.getState();
+      const grokConnected = Boolean(xaiApiKey);
+      if (grokConnected) {
+        setSections((prev) => [
+          ...prev,
+          {
+            provider: 'grok',
+            displayName: 'Grok (xAI)',
+            files: [{
+              fileId: 'grok',
+              filename: 'Grok',
+              provider: 'Grok',
+              providerKey: 'grok',
+              loading: false,
+            }],
+          },
+        ]);
+      }
+
       files.forEach((file) => {
         if (file?.id) {
           setTimeout(() => fetchQuotaForFile(file.id, file), 0);
@@ -267,6 +304,10 @@ export function useQuotaPresenter() {
 
       if (goConnected) {
         setTimeout(() => fetchQuotaForFile('opencode-go'), 0);
+      }
+
+      if (grokConnected) {
+        setTimeout(() => fetchQuotaForFile('grok'), 0);
       }
     } catch (err) {
       setError((err as Error).message);

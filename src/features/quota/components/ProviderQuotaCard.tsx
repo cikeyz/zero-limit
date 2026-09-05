@@ -94,6 +94,8 @@ export function ProviderQuotaCard({
           icon = '/cursor/cursor.svg';
         } else if (lowerProvider.includes('opencode')) {
           icon = '/opencode-go/opencode-go.svg';
+        } else if (lowerProvider.includes('grok') || lowerProvider.includes('xai')) {
+          icon = '/grok/grok.svg';
         } else {
           icon = '/openai/openai.png'; // Default fallback
         }
