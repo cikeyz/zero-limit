@@ -223,7 +223,7 @@ export function useQuotaPresenter() {
         setSections((prev) => prev.map(s => s.provider === 'grok' ? {
           ...s,
           files: s.files.map(f => f.fileId === fileId ? {
-            ...f, loading: false, models: result.models, error: result.error
+            ...f, loading: false, plan: 'tier' in result ? result.tier : undefined, models: result.models, error: result.error
           } : f)
         } : s));
       } else if (targetProvider === 'commandcode') {

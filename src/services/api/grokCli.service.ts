@@ -39,7 +39,7 @@ function parseMonthlyUsage(payload: unknown): MonthlyUsage | null {
   const limit = (c.monthlyLimit as Record<string, unknown> | undefined)?.val;
   const used = (c.used as Record<string, unknown> | undefined)?.val;
   const end = c.billingPeriodEnd;
-  if (typeof limit !== 'number' || !Number.isFinite(limit) || limit <= 0) return null;
+  if (typeof limit !== 'number' || !Number.isFinite(limit) || limit < 0) return null;
   if (typeof used !== 'number' || !Number.isFinite(used)) return null;
   if (typeof end !== 'string' || Number.isNaN(new Date(end).getTime())) return null;
   return { monthlyLimit: limit, used, billingPeriodEnd: end };
@@ -57,8 +57,12 @@ export function parseGrokCliBilling(
 
   const models: QuotaModel[] = [{
     name: 'Monthly usage',
-    percentage: clampPct(100 - (monthly.used / monthly.monthlyLimit) * 100),
-    displayValue: `${monthly.used.toLocaleString()} / ${monthly.monthlyLimit.toLocaleString()} credits`,
+    percentage: monthly.monthlyLimit > 0
+      ? clampPct(100 - (monthly.used / monthly.monthlyLimit) * 100)
+      : 100,
+    displayValue: monthly.monthlyLimit > 0
+      ? `${monthly.used.toLocaleString()} / ${monthly.monthlyLimit.toLocaleString()} credits`
+      : `${monthly.used.toLocaleString()} used (no cap reported)`,
     resetTime: formatTimeUntil(monthly.billingPeriodEnd),
   }];
 
