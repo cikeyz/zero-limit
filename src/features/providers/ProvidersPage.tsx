@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { PROVIDERS, PLUS_ONLY_PROVIDERS } from '@/constants';
@@ -52,6 +53,7 @@ import { CommandCodeCard } from '@/features/providers/CommandCodeCard';
 
 export function ProvidersPage() {
   const { t } = useTranslation();
+  const [manualOpen, setManualOpen] = useState(false);
   const {
     isAuthenticated,
     isNonPlusServer,
@@ -575,10 +577,26 @@ export function ProvidersPage() {
             </div>
 
             {/* Manual credential providers (no OAuth via proxy) */}
-            <div className="pt-2 space-y-2">
-                <OpenCodeGoCard />
-                <GrokCard />
-                <CommandCodeCard />
+            <div className="pt-2">
+                <button
+                    onClick={() => setManualOpen((v) => !v)}
+                    className="flex w-full items-center gap-3 rounded-lg border bg-card p-3 transition-colors hover:bg-accent/50"
+                >
+                    {manualOpen ? (
+                      <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                    ) : (
+                      <ChevronRight className="h-4 w-4 text-muted-foreground" />
+                    )}
+                    <span className="font-medium text-sm">{t('providers.manualTitle', 'Manual providers')}</span>
+                    <span className="text-xs text-muted-foreground">{t('providers.manualDesc', 'OpenCode Go · Grok · Command Code')}</span>
+                </button>
+                {manualOpen && (
+                    <div className="space-y-2 pt-2">
+                        <OpenCodeGoCard />
+                        <GrokCard />
+                        <CommandCodeCard />
+                    </div>
+                )}
             </div>
         </section>
 

@@ -121,7 +121,7 @@ export function GrokCard() {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <img src="/grok/grok.svg" alt="Grok" className="h-8 w-8 shrink-0 object-contain" />
+          <img src="/grok/grok.svg" alt="Grok" className="h-8 w-8 shrink-0 object-contain dark:invert" />
           <div className="min-w-0 flex-1">
             <CardTitle className="truncate text-base">{t('grok.title', 'Grok')}</CardTitle>
             <CardDescription>

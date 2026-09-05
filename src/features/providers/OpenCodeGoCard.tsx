@@ -94,7 +94,7 @@ export function OpenCodeGoCard() {
     <Card>
       <CardHeader className="pb-2">
         <div className="flex items-center gap-3">
-          <img src="/opencode-go/opencode-go.svg" alt="OpenCode Go" className="h-8 w-8 shrink-0 object-contain" />
+          <img src="/opencode-go/opencode-go.svg" alt="OpenCode Go" className="h-8 w-8 shrink-0 object-contain dark:invert" />
           <div className="min-w-0 flex-1">
             <CardTitle className="truncate text-base">{t('opencodeGo.title', 'OpenCode Go')}</CardTitle>
             <CardDescription>
