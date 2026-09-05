@@ -33,7 +33,8 @@ function readWindow(raw: unknown): WindowLimit | null {
 export function parseCommandCodeQuota(
   whoami: unknown,
   credits: unknown,
-  subscriptions: unknown
+  subscriptions: unknown,
+  summary: unknown = null
 ): CommandCodeQuotaResult {
   const models: QuotaModel[] = [];
   let email: string | undefined;
@@ -75,13 +76,38 @@ export function parseCommandCodeQuota(
     monthlyReset = formatTimeUntil(data.currentPeriodEnd);
   }
   if (monthly !== null) {
-    models.push({
-      name: 'Monthly credits',
-      percentage: 0,
-      displayValue: `$${monthly.toFixed(2)} used`,
-      resetTime: monthlyReset,
-      used: true,
-    });
+    const sum = (summary ?? null) as Record<string, unknown> | null;
+    const billed = normalizeNumberValue(sum?.totalMonthlyCredits);
+    if (billed !== null && billed > 0) {
+      const pool = monthly + billed;
+      models.push({
+        name: 'Monthly credits',
+        percentage: clampPct((billed / pool) * 100),
+        displayValue: `$${monthly.toFixed(2)} remaining · $${billed.toFixed(2)} billed`,
+        resetTime: monthlyReset,
+        used: true,
+      });
+    } else {
+      models.push({
+        name: 'Monthly credits',
+        percentage: 0,
+        displayValue: `$${monthly.toFixed(2)} remaining`,
+        resetTime: monthlyReset,
+        used: true,
+      });
+    }
+    const totalTokens = normalizeNumberValue(sum?.totalTokens);
+    const totalCount = normalizeNumberValue(sum?.totalCount);
+    if (totalTokens !== null && totalTokens > 0) {
+      const compact = totalTokens >= 1_000_000 ? `${(totalTokens / 1_000_000).toFixed(1)}M` : `${Math.round(totalTokens).toLocaleString()}`;
+      models.push({
+        name: 'Total tokens',
+        percentage: 0,
+        displayValue: `${compact} tokens${totalCount !== null && totalCount > 0 ? ` · ${Math.round(totalCount).toLocaleString()} runs` : ''} (month to date)`,
+        resetTime: monthlyReset,
+        used: true,
+      });
+    }
   }
 
   if (models.length === 0) {
@@ -119,7 +145,22 @@ export const commandcodeApi = {
 
       const creditsBody = credits.status >= 200 && credits.status < 300 ? credits.body : null;
       const subsBody = subscriptions.status >= 200 && subscriptions.status < 300 ? subscriptions.body : null;
-      const result = parseCommandCodeQuota(whoami.body, creditsBody, subsBody);
+
+      // Month-to-date totals for pool derivation (best effort, never fatal).
+      let summaryBody: unknown = null;
+      try {
+        const sub = (subsBody ?? null) as Record<string, unknown> | null;
+        const data = sub?.data as Record<string, unknown> | undefined;
+        const start = typeof data?.currentPeriodStart === 'string' && data.currentPeriodStart
+          ? data.currentPeriodStart
+          : `${new Date().toISOString().slice(0, 8)}01T00:00:00.000Z`;
+        const summary = await getJson(key, `/alpha/usage/summary?since=${encodeURIComponent(start)}`);
+        if (summary.status >= 200 && summary.status < 300) summaryBody = summary.body;
+      } catch {
+        // Totals are informational; windows above are the core result.
+      }
+
+      const result = parseCommandCodeQuota(whoami.body, creditsBody, subsBody, summaryBody);
       if (result.error || result.models.length === 0) {
         return { models: [], error: result.error || 'No Command Code usage figures returned' };
       }

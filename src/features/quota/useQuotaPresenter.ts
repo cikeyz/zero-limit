@@ -48,7 +48,7 @@ function formatFilename(name: string): string {
 
 const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
   antigravity: { path: '/antigravity/antigravity.svg', needsInvert: true },
-  codex: { path: '/openai/openai.png', needsInvert: false },
+  codex: { path: '/openai/openai.svg', needsInvert: true },
   'gemini-cli': { path: '/gemini/gemini.png', needsInvert: false },
   kiro: { path: '/kiro/kiro.png', needsInvert: false },
   copilot: { path: '/copilot/copilot.png', needsInvert: true },
@@ -62,7 +62,7 @@ const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
 const PROVIDER_DISPLAY: { key: string; name: string }[] = [
   { key: 'antigravity', name: 'Antigravity' },
   { key: 'anthropic', name: 'Claude (Anthropic)' },
-  { key: 'codex', name: 'Codex (OpenAI)' },
+  { key: 'codex', name: 'Codex' },
   { key: 'commandcode', name: 'Command Code' },
   { key: 'cursor', name: 'Cursor' },
   { key: 'gemini-cli', name: 'Gemini CLI' },

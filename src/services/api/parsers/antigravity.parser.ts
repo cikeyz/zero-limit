@@ -16,10 +16,14 @@ export function parseAntigravityModels(body: unknown): QuotaModel[] {
 
     let name = (model.displayName as string) || (model.display_name as string);
     if (!name) {
-      if (key === 'rev19-uic3-1p') name = 'Gemini 2.5 Computer Use';
-      else if (key === 'gemini-3-pro-image') name = 'Gemini 3 Pro Image';
-      else if (key === 'gemini-2.5-flash-lite') name = 'Gemini 2.5 Flash Lite';
-      else if (key === 'gemini-2.5-flash') name = 'Gemini 2.5 Flash';
+      if (key === 'gemini-3.7-flash-tiered') name = 'Gemini 3.7 Flash (Tiered)';
+      else if (key === 'gemini-3.6-flash-tiered') name = 'Gemini 3.6 Flash (Tiered)';
+      else if (key === 'gemini-3.6-flash-low') name = 'Gemini 3.6 Flash (Low)';
+      else if (key === 'gemini-3.6-flash-medium') name = 'Gemini 3.6 Flash (Medium)';
+      else if (key === 'gemini-3.6-flash-high') name = 'Gemini 3.6 Flash (High)';
+      else if (key === 'claude-opus-4-6-thinking') name = 'Claude Opus 4.6 (Thinking)';
+      else if (key === 'claude-sonnet-4-6') name = 'Claude Sonnet 4.6';
+      else if (key === 'gpt-oss-120b-medium') name = 'GPT-OSS 120B (Medium)';
       else name = key;
     }
 
