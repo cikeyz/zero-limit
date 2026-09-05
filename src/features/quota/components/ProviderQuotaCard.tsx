@@ -103,7 +103,7 @@ export function ProviderQuotaCard({
         }
       }
 
-      const needsInvert = icon === '/copilot/copilot.png';
+      const needsInvert = ['/copilot/copilot.png', '/cursor/cursor.svg', '/opencode-go/opencode-go.svg', '/grok/grok.svg'].includes(icon);
 
       return {
         name,

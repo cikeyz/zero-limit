@@ -73,7 +73,7 @@ export function getProviderIconInfo(providerId: string): { path: string; needsIn
   if (id.includes('codex') || id.includes('openai')) return { path: '/openai/openai.png', needsInvert: false };
   if (id.includes('kiro')) return { path: '/kiro/kiro.png', needsInvert: false };
   if (id.includes('copilot') || id.includes('github')) return { path: '/copilot/copilot.png', needsInvert: true };
-  if (id.includes('cursor')) return { path: '/cursor/cursor.svg', needsInvert: false };
+  if (id.includes('cursor')) return { path: '/cursor/cursor.svg', needsInvert: true };
   return { path: '', needsInvert: false };
 }
 
@@ -126,7 +126,7 @@ export function useProvidersPresenter() {
       kiro: { displayName: 'Kiro (CodeWhisperer)', files: [], iconInfo: { path: '/kiro/kiro.png', needsInvert: false } },
       copilot: { displayName: 'GitHub Copilot', files: [], iconInfo: { path: '/copilot/copilot.png', needsInvert: true } },
       anthropic: { displayName: 'Claude (Anthropic)', files: [], iconInfo: { path: '/claude/claude.png', needsInvert: false } },
-      cursor: { displayName: 'Cursor', files: [], iconInfo: { path: '/cursor/cursor.svg', needsInvert: false } },
+      cursor: { displayName: 'Cursor', files: [], iconInfo: { path: '/cursor/cursor.svg', needsInvert: true } },
       other: { displayName: 'Other', files: [], iconInfo: { path: '', needsInvert: false } }
     };
 

@@ -53,9 +53,9 @@ const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
   kiro: { path: '/kiro/kiro.png', needsInvert: false },
   copilot: { path: '/copilot/copilot.png', needsInvert: true },
   anthropic: { path: '/claude/claude.png', needsInvert: false },
-  cursor: { path: '/cursor/cursor.svg', needsInvert: false },
-  'opencode-go': { path: '/opencode-go/opencode-go.svg', needsInvert: false },
-  grok: { path: '/grok/grok.svg', needsInvert: false },
+  cursor: { path: '/cursor/cursor.svg', needsInvert: true },
+  'opencode-go': { path: '/opencode-go/opencode-go.svg', needsInvert: true },
+  grok: { path: '/grok/grok.svg', needsInvert: true },
   commandcode: { path: '/commandcode/commandcode.svg', needsInvert: false },
 };
 
