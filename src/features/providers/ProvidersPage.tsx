@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { motion } from 'motion/react';
 import { PROVIDERS, PLUS_ONLY_PROVIDERS } from '@/constants';
+import type { ProviderId } from '@/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Badge } from '@/shared/components/ui/badge';
@@ -22,6 +23,10 @@ import {
   Download,
   Upload,
   Lock,
+  Pencil,
+  RefreshCw,
+  Check,
+  X,
 } from 'lucide-react';
 import {
   Dialog,
@@ -50,10 +55,13 @@ import {
 import { OpenCodeGoCard } from '@/features/providers/OpenCodeGoCard';
 import { GrokCard } from '@/features/providers/GrokCard';
 import { CommandCodeCard } from '@/features/providers/CommandCodeCard';
+import { accountLabelKey, useAccountLabelsStore } from '@/features/providers/accountLabels.store';
 
 export function ProvidersPage() {
   const { t } = useTranslation();
   const [manualOpen, setManualOpen] = useState(false);
+  const [editingLabel, setEditingLabel] = useState<{ id: string; draft: string } | null>(null);
+  const { labels, setLabel } = useAccountLabelsStore();
   const {
     isAuthenticated,
     isNonPlusServer,
@@ -315,7 +323,12 @@ export function ProvidersPage() {
                              } else {
                                rawName = formatName((file.metadata?.email as string) || (file.account as string) || file.filename);
                              }
-                              const displayName = isPrivacyMode ? maskEmail(rawName) : rawName;
+                               const displayNameRaw = (() => {
+                                 const labelKey = accountLabelKey(file.provider, file.filename || file.id);
+                                 const custom = labelKey ? (labels[labelKey] || '').trim() : '';
+                                 return custom || rawName;
+                               })();
+                               const displayName = isPrivacyMode ? maskEmail(displayNameRaw) : displayNameRaw;
                               // Synthetic manual-tracker rows have no auth file: no
                               // download/copy-token actions, delete disconnects instead.
                               const rawKind = file.syntheticKind;
@@ -334,8 +347,41 @@ export function ProvidersPage() {
                                      alt={file.provider}
                                      className={`h-5 w-5 object-contain ${group.iconInfo.needsInvert ? 'invert-on-dark' : ''}`}
                                    />
-                                   <div>
-                                     <div className="font-medium text-sm text-foreground">{displayName}</div>
+                                    <div>
+                                      {editingLabel?.id === (file.id || '') ? (
+                                        <div className="flex items-center gap-1">
+                                          <Input
+                                            value={editingLabel.draft}
+                                            onChange={(e) => setEditingLabel({ id: file.id || '', draft: e.target.value })}
+                                            placeholder={rawName}
+                                            className="h-7 text-sm"
+                                          />
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7"
+                                            onClick={() => {
+                                              const k = accountLabelKey(file.provider, file.filename || file.id);
+                                              if (k) setLabel(k, editingLabel.draft.trim());
+                                              setEditingLabel(null);
+                                            }}
+                                            title={t('common.save', 'Save')}
+                                          >
+                                            <Check className="h-4 w-4" />
+                                          </Button>
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-7 w-7"
+                                            onClick={() => setEditingLabel(null)}
+                                            title={t('common.cancel')}
+                                          >
+                                            <X className="h-4 w-4" />
+                                          </Button>
+                                        </div>
+                                      ) : (
+                                        <div className="font-medium text-sm text-foreground">{displayName}</div>
+                                      )}
                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                        <span>{file.provider}</span>
                                        <span className="text-[10px]">•</span>
@@ -347,6 +393,26 @@ export function ProvidersPage() {
                                   <div className="flex items-center gap-1">
                                     {!isSynthetic && (
                                       <>
+                                        {providerId !== 'other' && (
+                                          <Button
+                                            size="icon"
+                                            variant="ghost"
+                                            className="h-8 w-8 text-primary hover:bg-primary/10 opacity-80 group-hover:opacity-100"
+                                            onClick={() => startAuth(providerId as ProviderId)}
+                                            title={t('providers.reconnect', 'Reconnect (log in again)')}
+                                          >
+                                            <RefreshCw className="h-4 w-4" />
+                                          </Button>
+                                        )}
+                                        <Button
+                                          size="icon"
+                                          variant="ghost"
+                                          className="h-8 w-8 text-primary hover:bg-primary/10 opacity-80 group-hover:opacity-100"
+                                          onClick={() => setEditingLabel({ id: file.id || '', draft: '' })}
+                                          title={t('providers.rename', 'Set display name')}
+                                        >
+                                          <Pencil className="h-4 w-4" />
+                                        </Button>
                                         <Button
                                           size="icon"
                                           variant="ghost"

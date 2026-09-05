@@ -10,6 +10,7 @@ import { opencodeGoApi } from '@/services/api/opencodeGo.service';
 import { useXaiStore } from '@/features/providers/xai.store';
 import { xaiApi } from '@/services/api/xai.service';
 import { grokCliApi } from '@/services/api/grokCli.service';
+import { accountLabelKey, useAccountLabelsStore } from '@/features/providers/accountLabels.store';
 import { useCommandCodeStore } from '@/features/providers/commandcode.store';
 import { commandcodeApi } from '@/services/api/commandcode.service';
 
@@ -250,9 +251,11 @@ export function useQuotaPresenter() {
         if (!file) return;
         const providerType = getProviderType(file);
         if (grouped[providerType]) {
+          const labelKey = accountLabelKey(file.provider, file.filename || file.id);
+          const customLabel = labelKey ? (useAccountLabelsStore.getState().labels[labelKey] || '').trim() : '';
           grouped[providerType].push({
             fileId: file.id || file.filename || String(Math.random()),
-            filename: formatFilename(file.filename || file.id || 'unknown'),
+            filename: customLabel || formatFilename(file.filename || file.id || 'unknown'),
             provider: providerType.charAt(0).toUpperCase() + providerType.slice(1),
             providerKey: providerType,
             loading: false,
