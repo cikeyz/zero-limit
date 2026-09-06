@@ -9,6 +9,7 @@ import { useCommandCodeStore } from '@/features/providers/commandcode.store';
 import type { CommandCodeAccount } from '@/features/providers/commandcode.store';
 import { commandcodeApi } from '@/services/api/commandcode.service';
 import { notifyAccountsChanged } from '@/features/providers/opencodeGo.store';
+import { isTauri } from '@/services/tauri';
 
 function accountFallback(account: CommandCodeAccount): string {
   if (account.label.trim()) return account.label.trim();
@@ -32,8 +33,36 @@ export function CommandCodeCard() {
 
   const connected = accounts.length > 0;
 
-  const handleConnect = async () => {
+  const handleAutoDetect = async () => {
     setError(null);
+    if (!isTauri()) {
+      setError(t('commandcode.desktopOnly', 'Auto-detect needs the desktop app. Enter the key manually below.'));
+      return;
+    }
+    setChecking(true);
+    try {
+      const { readTextFile } = await import('@tauri-apps/plugin-fs');
+      const { join, homeDir } = await import('@tauri-apps/api/path');
+      const raw = await readTextFile(await join(await homeDir(), '.commandcode', 'auth.json'));
+      const data = JSON.parse(raw) as { apiKey?: unknown };
+      if (typeof data?.apiKey !== 'string' || !data.apiKey) {
+        throw new Error(t('commandcode.noLocalKey', 'No API key found in your Command Code auth file. Run cmd login first.'));
+      }
+      const result = await commandcodeApi.fetchQuota(data.apiKey);
+      if (result.error || result.models.length === 0) {
+        throw new Error(result.error || t('commandcode.noData', 'No usage data returned. Check your API key.'));
+      }
+      addAccount({ label: labelInput.trim(), apiKey: data.apiKey });
+      setLabelInput('');
+      notifyAccountsChanged();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setChecking(false);
+    }
+  };
+
+  const handleConnect = async () => {    setError(null);
     const key = keyInput.trim();
     if (!key) {
       setError(t('commandcode.missingKey', 'Enter your Command Code API key.'));
@@ -96,6 +125,10 @@ export function CommandCodeCard() {
           value={labelInput}
           onChange={(e) => setLabelInput(e.target.value)}
         />
+        <Button className="w-full" variant="outline" onClick={handleAutoDetect} disabled={checking}>
+          {checking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {t('commandcode.autoDetect', 'Auto-detect from Command Code CLI')}
+        </Button>
         <Input
           type="password"
           placeholder={t('commandcode.keyPlaceholder', 'API key from ~/.commandcode/auth.json')}
