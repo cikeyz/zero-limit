@@ -51,7 +51,7 @@ export function DashboardPage() {
       <div className="flex items-center justify-between mb-6">
         <div className="flex flex-col gap-1">
           <h1 className="text-3xl font-bold tracking-tight text-foreground">
-            {t('dashboard.hello')} <span className="text-primary">User</span> 👋
+            {t('dashboard.hello')}, <span className="text-primary">CK</span>
           </h1>
           <p className="text-muted-foreground">
             {t('dashboard.welcomeMessage')}
