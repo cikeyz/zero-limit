@@ -164,13 +164,18 @@ export function CompactQuotaCard({
                 {t('quotaCard.totalBurn', 'Total burn')}
               </div>
               {group.items.map((item, itemIdx) => (
-                <div key={itemIdx} className="flex items-end justify-between gap-2 min-w-0">
-                  <div className="min-w-0">
-                    <div className="text-muted-foreground font-medium truncate text-xs" title={item.name}>{item.name}</div>
-                    {item.displayValue && (
-                      <div className="font-bold text-xl tracking-tight">{item.displayValue}</div>
-                    )}
-                  </div>
+                <div key={itemIdx}>
+                  {item.displayValue ? (
+                    <div className="text-xl font-bold tracking-tight">{item.displayValue}</div>
+                  ) : (
+                    <div className="text-xl font-bold tracking-tight">{item.percentage}{item.used ? '% used' : '%'}</div>
+                  )}
+                  {(item.detail || item.resetTime) && (
+                    <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
+                      {item.detail && <span>{item.detail}</span>}
+                      {item.resetTime && <span>Resets {item.resetTime}</span>}
+                    </div>
+                  )}
                 </div>
               ))}
             </div>
@@ -202,7 +207,7 @@ export function CompactQuotaCard({
               <span className="font-medium truncate flex-1" title={group.name}>{group.name}</span>
               <div className="flex items-center gap-2 flex-shrink-0">
                 {group.items[0]?.displayValue && (
-                  <span className="font-bold">{group.items[0].displayValue}</span>
+                  <span className="font-bold text-sm">{group.items[0].displayValue}</span>
                 )}
               </div>
             </div>
@@ -247,13 +252,22 @@ export function CompactQuotaCard({
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
                       {group.items.map((item, idx) => (
                         <div key={idx} className="rounded-lg border bg-card p-3 space-y-2">
-                          <div className="text-xs text-muted-foreground truncate" title={item.name}>{item.name}</div>
                           {item.separate && item.displayValue ? (
+                            <>
                             <div className="text-2xl font-bold tracking-tight">{item.displayValue}</div>
+                            {item.detail && (
+                              <div className="text-xs text-muted-foreground">{item.detail}</div>
+                            )}
+                            </>
                           ) : (
+                            <>
+                            <div className="text-xs text-muted-foreground truncate" title={item.name}>{item.name}</div>
+                            <div className="flex items-center justify-between">
                             <span className={`font-bold text-sm ${getPercentColor(item.used ? 100 - item.percentage : item.percentage)}`}>
                               {item.percentage}{item.used ? '% used' : '%'}
                             </span>
+                            </div>
+                            </>
                           )}
                           {item.displayValue && !item.separate && (
                             <div className="text-xs text-muted-foreground">

@@ -106,7 +106,8 @@ export function parseCommandCodeQuota(
       models.push({
         name: 'Total tokens',
         percentage: 0,
-        displayValue: `${compact} tokens${totalCount !== null && totalCount > 0 ? ` · ${Math.round(totalCount).toLocaleString()} runs` : ''} (month to date)`,
+        displayValue: `${compact} tokens`,
+        detail: `${totalCount !== null && totalCount > 0 ? `${Math.round(totalCount).toLocaleString()} runs · ` : ''}month to date`,
         resetTime: monthlyReset,
         used: true,
         separate: true,

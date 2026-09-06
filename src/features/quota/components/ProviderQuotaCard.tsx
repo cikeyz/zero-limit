@@ -224,11 +224,16 @@ export function ProviderQuotaCard({
                                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                                         {group.items.map((item, idx) => (
                                             <div key={idx} className="rounded-lg border bg-card p-4 shadow-sm space-y-3">
-                                                <div className="text-xs text-muted-foreground truncate" title={item.name}>{item.name}</div>
                                                 {item.separate && item.displayValue ? (
+                                                    <>
                                                     <div className="text-2xl font-bold tracking-tight">{item.displayValue}</div>
+                                                    {item.detail && (
+                                                        <div className="text-xs text-muted-foreground">{item.detail}</div>
+                                                    )}
+                                                    </>
                                                 ) : (
                                                 <>
+                                                <div className="text-xs text-muted-foreground truncate" title={item.name}>{item.name}</div>
                                                 <div className="flex items-center justify-between">
                                                     <span className={`font-bold text-sm ${item.used ? (item.percentage < 80 ? 'text-green-500' : 'text-yellow-500') : (item.percentage > 20 ? 'text-green-500' : 'text-yellow-500')}`}>
                                                         {item.percentage}{item.used ? '% used' : '%'}
@@ -329,21 +334,19 @@ export function ProviderQuotaCard({
                             {t('quotaCard.totalBurn', 'Total burn')}
                         </div>
                         {group.items.map((item, itemIdx) => (
-                            <div key={itemIdx} className="flex items-end justify-between gap-3">
-                                <div className="min-w-0">
-                                    <div className="text-xs text-muted-foreground truncate" title={item.name}>{item.name}</div>
-                                    {item.displayValue ? (
-                                        <div className="text-2xl font-bold tracking-tight">{item.displayValue}</div>
-                                    ) : (
-                                        <div className="text-2xl font-bold tracking-tight">{item.percentage}{item.used ? '% used' : '%'}</div>
+                            <div key={itemIdx}>
+                                <div className="text-3xl font-bold tracking-tight">
+                                    {item.displayValue || `${item.percentage}%`}
+                                </div>
+                                <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
+                                    {item.detail && <span>{item.detail}</span>}
+                                    {item.resetTime && (
+                                        <span className="flex items-center gap-1">
+                                            <Clock className="h-3 w-3" />
+                                            <span>Resets {item.resetTime}</span>
+                                        </span>
                                     )}
                                 </div>
-                                {item.resetTime && (
-                                    <div className="flex items-center gap-1 rounded bg-secondary px-1.5 py-0.5 text-xs text-muted-foreground flex-shrink-0">
-                                        <Clock className="h-3 w-3" />
-                                        <span>{item.resetTime}</span>
-                                    </div>
-                                )}
                             </div>
                         ))}
                     </div>

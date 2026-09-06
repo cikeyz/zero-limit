@@ -9,8 +9,8 @@ export interface QuotaModel {
   used?: boolean;
   /** True to render as its own trailing group instead of merging. */
   separate?: boolean;
-  /** Lower values sort first (time-window order); missing sorts last. */
-  sortOrder?: number;
+  /** Secondary line under a separate total (e.g. run counts). */
+  detail?: string;
 }
 
 export interface AntigravityQuotaResult {
