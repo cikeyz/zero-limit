@@ -3,7 +3,7 @@ import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Users, Activity, TrendingDown, Loader2, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
-import { useDashboardPresenter } from '@/features/dashboard/useDashboardPresenter';
+import { useDashboardPresenter, formatCompact } from '@/features/dashboard/useDashboardPresenter';
 
 function worstColor(worst: number | null): string {
   if (worst === null) return 'bg-muted';
@@ -21,6 +21,8 @@ export function DashboardPage() {
     loadData,
     providerSummaries,
     attentionItems,
+    machineTotals,
+    liveTokenRows,
   } = useDashboardPresenter();
 
   return (
@@ -108,6 +110,79 @@ export function DashboardPage() {
                    </>
                )}
             </p>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* Token Usage Section */}
+      <div className="space-y-4">
+        <h2 className="text-2xl font-bold tracking-tight">{t('dashboard.tokenUsage')}</h2>
+
+        {/* Machine-wide audit snapshot */}
+        <Card className="overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50 hover:shadow-lg transition-all duration-300 gap-2 py-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.machineWide')}</CardTitle>
+            <span className="text-xs text-muted-foreground">{t('dashboard.auditAsOf')}</span>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-2">
+            {!machineTotals ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : (
+              <div className="grid gap-2 grid-cols-2 md:grid-cols-4">
+                {[
+                  { label: t('dashboard.statRequests'), value: formatCompact(machineTotals.requests) },
+                  { label: t('dashboard.statCost'), value: `$${machineTotals.cost_usd.toFixed(2)}` },
+                  { label: t('dashboard.statInput'), value: formatCompact(machineTotals.tokens_in) },
+                  { label: t('dashboard.statOutput'), value: formatCompact(machineTotals.tokens_out) },
+                  { label: t('dashboard.statCacheRead'), value: formatCompact(machineTotals.tokens_cache_read) },
+                  { label: t('dashboard.statCacheCreate'), value: formatCompact(machineTotals.tokens_creation) },
+                  { label: t('dashboard.statSessions'), value: formatCompact(machineTotals.sessions) },
+                  { label: t('dashboard.statModels'), value: formatCompact(machineTotals.model_count) },
+                ].map((s) => (
+                  <div key={s.label} className="p-2 rounded-md bg-background/50 border border-border/50">
+                    <div className="text-lg font-bold text-foreground">{s.value}</div>
+                    <div className="text-xs text-muted-foreground">{s.label}</div>
+                  </div>
+                ))}
+              </div>
+            )}
+            {machineTotals && (
+              <p className="text-xs text-muted-foreground mt-2">
+                {machineTotals.date_first} → {machineTotals.date_last}
+              </p>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Live month-to-date provider totals */}
+        <Card className="overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50 gap-2 py-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.liveMonthToDate')}</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-2">
+            {quotaLoading && liveTokenRows.length === 0 ? (
+              <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+            ) : liveTokenRows.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('dashboard.noLiveUsage')}</p>
+            ) : (
+              <div className="flex flex-col gap-1.5">
+                {liveTokenRows.map((row) => (
+                  <div
+                    key={row.fileId}
+                    className="flex items-center justify-between p-1.5 rounded-md bg-cyan-500/5 text-xs"
+                  >
+                    <span className="font-medium text-foreground truncate">
+                      {row.label}
+                      <span className="ml-2 font-normal text-muted-foreground">{row.displayName}</span>
+                    </span>
+                    <span className="font-semibold text-foreground shrink-0 ml-2">
+                      {row.value}
+                      {row.detail && <span className="ml-2 font-normal text-muted-foreground">{row.detail}</span>}
+                    </span>
+                  </div>
+                ))}
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

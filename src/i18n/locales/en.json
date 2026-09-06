@@ -269,6 +269,19 @@
     "byProvider": "Consumption by Provider",
     "accountsCount": "{count} accounts",
     "errorsCount": "{count} errors",
-    "noProviders": "No providers connected yet."
+    "noProviders": "No providers connected yet.",
+    "statCacheRead": "Cache-read",
+    "tokenUsage": "Token Usage",
+    "statOutput": "Output tokens",
+    "statSessions": "Sessions",
+    "statModels": "Models",
+    "statRequests": "Requests",
+    "liveMonthToDate": "Live provider totals (month to date)",
+    "statCacheCreate": "Cache-create",
+    "noLiveUsage": "No provider exposes consumed-token totals yet.",
+    "statCost": "Cost",
+    "statInput": "Input tokens",
+    "auditAsOf": "Audit of Aug 31, 2026",
+    "machineWide": "Machine-wide totals"
   }
 }

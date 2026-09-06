@@ -5,6 +5,7 @@ import { useCliProxyStore } from '@/features/settings/cliProxy.store';
 import { useHeaderRefresh } from '@/shared/hooks';
 import { authFilesApi } from '@/services/api/auth.service';
 import { useQuotaPresenter, ICON_MAP } from '@/features/quota/useQuotaPresenter';
+import { getMachineUsage, type MachineUsageTotals } from '@/services/api/machineUsage.service';
 import type { FileQuota } from '@/types';
 
 export interface ProviderSummary {
@@ -42,6 +43,21 @@ export function fileWorstUsed(f: FileQuota): number | null {
   return vals.length > 0 ? Math.max(...vals) : null;
 }
 
+export interface LiveUsageRow {
+  fileId: string;
+  label: string;
+  displayName: string;
+  value: string;
+  detail?: string;
+}
+
+export function formatCompact(num: number): string {
+  if (num >= 1_000_000_000) return `${(num / 1_000_000_000).toFixed(2)}B`;
+  if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
+  if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
+  return Math.round(num).toString();
+}
+
 export function accountLabel(f: FileQuota): string {
   return f.email || f.filename.replace(/_gmail_com/g, '').replace(/\.json$/g, '');
 }
@@ -53,6 +69,7 @@ export function useDashboardPresenter() {
   const quota = useQuotaPresenter();
 
   const [activeAccountsCount, setActiveAccountsCount] = useState<number>(0);
+  const [machineTotals, setMachineTotals] = useState<MachineUsageTotals | null>(null);
 
   const loadData = useCallback(async () => {
     try {
@@ -84,6 +101,12 @@ export function useDashboardPresenter() {
       loadData();
     }
   }, [connectionStatus, loadData]);
+
+  useEffect(() => {
+    getMachineUsage().then((snap) => {
+      if (snap?.totals) setMachineTotals(snap.totals);
+    });
+  }, []);
 
   useHeaderRefresh(loadData);
 
@@ -147,6 +170,27 @@ export function useDashboardPresenter() {
     return items;
   }, [quota.sections]);
 
+  const liveTokenRows: LiveUsageRow[] = useMemo(() => {
+    const rows: LiveUsageRow[] = [];
+    for (const s of quota.sections) {
+      for (const f of s.files) {
+        if (f.loading || f.error) continue;
+        for (const m of f.models ?? []) {
+          if (m.name === 'Total tokens' && m.displayValue) {
+            rows.push({
+              fileId: f.fileId,
+              label: accountLabel(f),
+              displayName: s.displayName,
+              value: m.displayValue,
+              detail: m.detail,
+            });
+          }
+        }
+      }
+    }
+    return rows;
+  }, [quota.sections]);
+
   return {
     connectionStatus,
     quotaLoading: quota.loading,
@@ -154,5 +198,7 @@ export function useDashboardPresenter() {
     loadData,
     providerSummaries,
     attentionItems,
+    machineTotals,
+    liveTokenRows,
   };
 }
