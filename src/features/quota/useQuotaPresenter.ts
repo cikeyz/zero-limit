@@ -53,7 +53,7 @@ function syntheticAccountId(fileId: string, prefix: string): string | null {
   return null;
 }
 
-const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
+export const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
   antigravity: { path: '/antigravity/antigravity.svg', needsInvert: true },
   codex: { path: '/openai/openai.svg', needsInvert: true },
   kiro: { path: '/kiro/kiro.svg', needsInvert: true },

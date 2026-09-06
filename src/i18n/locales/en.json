@@ -126,7 +126,6 @@
     "percentLeft": "{{percent}}% left",
     "unknown": "Unknown"
   },
-
   "cliProxy": {
     "title": "CLI Proxy Server",
     "description": "Configure the CLI Proxy API service",
@@ -263,6 +262,13 @@
       "stable": "Stable",
       "latestRelease": "latest release",
       "port": "Port"
-    }
+    },
+    "quotaOverview": "Quota Overview",
+    "needsAttention": "Needs Attention",
+    "allHealthy": "All quotas healthy.",
+    "byProvider": "Consumption by Provider",
+    "accountsCount": "{count} accounts",
+    "errorsCount": "{count} errors",
+    "noProviders": "No providers connected yet."
   }
 }
