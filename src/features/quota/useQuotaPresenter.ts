@@ -46,6 +46,13 @@ function formatFilename(name: string): string {
   return name.replace(/_gmail_com/g, '').replace(/\.json$/g, '');
 }
 
+/** Account id suffix for synthetic per-account file ids (`<prefix>:<id>`). '' = legacy bare id. */
+function syntheticAccountId(fileId: string, prefix: string): string | null {
+  if (fileId === prefix) return '';
+  if (fileId.startsWith(`${prefix}:`)) return fileId.slice(prefix.length + 1);
+  return null;
+}
+
 const ICON_MAP: Record<string, { path?: string; needsInvert: boolean }> = {
   antigravity: { path: '/antigravity/antigravity.svg', needsInvert: true },
   codex: { path: '/openai/openai.svg', needsInvert: true },
@@ -84,12 +91,18 @@ export function useQuotaPresenter() {
     let targetProvider: string | undefined;
 
     const maybeQuota = providedFile as unknown as FileQuota | undefined;
-    if (fileId === 'opencode-go' || maybeQuota?.providerKey === 'opencode-go') {
+    // Synthetic per-account ids look like `opencode-go:<accountId>` (etc.);
+    // the bare `opencode-go` form is the pre-multi-account id (accounts[0]).
+    let manualAccountId = '';
+    if (syntheticAccountId(fileId, 'opencode-go') !== null || maybeQuota?.providerKey === 'opencode-go') {
       targetProvider = 'opencode-go';
-    } else if (fileId === 'grok' || maybeQuota?.providerKey === 'grok') {
+      manualAccountId = syntheticAccountId(fileId, 'opencode-go') ?? '';
+    } else if (syntheticAccountId(fileId, 'grok') !== null || maybeQuota?.providerKey === 'grok') {
       targetProvider = 'grok';
-    } else if (fileId === 'commandcode' || maybeQuota?.providerKey === 'commandcode') {
+      manualAccountId = syntheticAccountId(fileId, 'grok') ?? '';
+    } else if (syntheticAccountId(fileId, 'commandcode') !== null || maybeQuota?.providerKey === 'commandcode') {
       targetProvider = 'commandcode';
+      manualAccountId = syntheticAccountId(fileId, 'commandcode') ?? '';
     }
 
     if (providedFile) {
@@ -191,9 +204,16 @@ export function useQuotaPresenter() {
           } : f)
         } : s));
       } else if (targetProvider === 'opencode-go') {
-        const { apiKey, workspaceId, authCookie } = useOpenCodeGoStore.getState();
-        if (!apiKey && (!workspaceId || !authCookie)) throw new Error('OpenCode Go is not connected');
-        const result = await opencodeGoApi.fetchQuota({ apiKey, workspaceId, authCookie });
+        const accounts = useOpenCodeGoStore.getState().accounts;
+        const account = manualAccountId ? accounts.find((a) => a.id === manualAccountId) : accounts[0];
+        if (!account || (!account.apiKey && (!account.workspaceId || !account.authCookie))) {
+          throw new Error('OpenCode Go is not connected');
+        }
+        const result = await opencodeGoApi.fetchQuota({
+          apiKey: account.apiKey,
+          workspaceId: account.workspaceId,
+          authCookie: account.authCookie,
+        });
         setSections((prev) => prev.map(s => s.provider === 'opencode-go' ? {
           ...s,
           files: s.files.map(f => f.fileId === fileId ? {
@@ -201,12 +221,14 @@ export function useQuotaPresenter() {
           } : f)
         } : s));
       } else if (targetProvider === 'grok') {
-        const { apiKey, cliKey, cliRefresh, setCliSession } = useXaiStore.getState();
-        const result = cliKey
-          ? await grokCliApi.fetchQuota(cliKey, cliRefresh || undefined)
-          : await xaiApi.fetchQuota(apiKey);
-        if (cliKey && 'refreshed' in result && result.refreshed) {
-          setCliSession(result.refreshed.key, result.refreshed.refresh);
+        const { accounts, updateAccount } = useXaiStore.getState();
+        const account = manualAccountId ? accounts.find((a) => a.id === manualAccountId) : accounts[0];
+        if (!account || (!account.apiKey && !account.cliKey)) throw new Error('Grok is not connected');
+        const result = account.cliKey
+          ? await grokCliApi.fetchQuota(account.cliKey, account.cliRefresh || undefined)
+          : await xaiApi.fetchQuota(account.apiKey);
+        if (account.cliKey && 'refreshed' in result && result.refreshed) {
+          updateAccount(account.id, { cliKey: result.refreshed.key, cliRefresh: result.refreshed.refresh });
         }
         setSections((prev) => prev.map(s => s.provider === 'grok' ? {
           ...s,
@@ -215,9 +237,10 @@ export function useQuotaPresenter() {
           } : f)
         } : s));
       } else if (targetProvider === 'commandcode') {
-        const { apiKey } = useCommandCodeStore.getState();
-        if (!apiKey) throw new Error('Command Code is not connected');
-        const result = await commandcodeApi.fetchQuota(apiKey);
+        const accounts = useCommandCodeStore.getState().accounts;
+        const account = manualAccountId ? accounts.find((a) => a.id === manualAccountId) : accounts[0];
+        if (!account || !account.apiKey) throw new Error('Command Code is not connected');
+        const result = await commandcodeApi.fetchQuota(account.apiKey);
         setSections((prev) => prev.map(s => s.provider === 'commandcode' ? {
           ...s,
           files: s.files.map(f => f.fileId === fileId ? {
@@ -272,47 +295,54 @@ export function useQuotaPresenter() {
         files: grouped[p.key] || [],
       })));
 
-      const { apiKey: goApiKey, workspaceId: goWorkspaceId, authCookie: goAuthCookie } = useOpenCodeGoStore.getState();
-      const goConnected = Boolean(goApiKey || (goWorkspaceId && goAuthCookie));
-      if (goConnected) {
-        const goLabel = (useOpenCodeGoStore.getState().label || '').trim();
-        const goFile: FileQuota = {
-          fileId: 'opencode-go',
+      const goAccounts = useOpenCodeGoStore.getState().accounts.filter(
+        (a) => a.apiKey || (a.workspaceId && a.authCookie)
+      );
+      const goFiles: FileQuota[] = goAccounts.map((a) => {
+        const goLabel = (a.label || '').trim();
+        return {
+          fileId: `opencode-go:${a.id}`,
           filename: goLabel || 'OpenCode Go',
           provider: 'OpenCode Go',
           providerKey: 'opencode-go',
           loading: false,
-          email: goLabel || extractWorkspaceId(goWorkspaceId) || goWorkspaceId || undefined,
+          email: goLabel || extractWorkspaceId(a.workspaceId) || a.workspaceId || undefined,
         };
-        setSections((prev) => prev.map((s) => (s.provider === 'opencode-go' ? { ...s, files: [goFile] } : s)));
+      });
+      if (goFiles.length > 0) {
+        setSections((prev) => prev.map((s) => (s.provider === 'opencode-go' ? { ...s, files: goFiles } : s)));
       }
 
-      const { apiKey: xaiApiKey, cliKey: grokCliKey } = useXaiStore.getState();
-      const grokConnected = Boolean(xaiApiKey || grokCliKey);
-      if (grokConnected) {
-        const grokFile: FileQuota = {
-          fileId: 'grok',
-          filename: (useXaiStore.getState().label || '').trim() || 'Grok',
+      const grokAccounts = useXaiStore.getState().accounts.filter((a) => a.apiKey || a.cliKey);
+      const grokFiles: FileQuota[] = grokAccounts.map((a) => {
+        const grokLabel = (a.label || '').trim();
+        return {
+          fileId: `grok:${a.id}`,
+          filename: grokLabel || 'Grok',
           provider: 'Grok',
           providerKey: 'grok',
           loading: false,
-          email: (useXaiStore.getState().label || '').trim() || undefined,
+          email: grokLabel || undefined,
         };
-        setSections((prev) => prev.map((s) => (s.provider === 'grok' ? { ...s, files: [grokFile] } : s)));
+      });
+      if (grokFiles.length > 0) {
+        setSections((prev) => prev.map((s) => (s.provider === 'grok' ? { ...s, files: grokFiles } : s)));
       }
 
-      const { apiKey: commandcodeApiKey } = useCommandCodeStore.getState();
-      const commandcodeConnected = Boolean(commandcodeApiKey);
-      if (commandcodeConnected) {
-        const ccFile: FileQuota = {
-          fileId: 'commandcode',
-          filename: (useCommandCodeStore.getState().label || '').trim() || 'Command Code',
+      const ccAccounts = useCommandCodeStore.getState().accounts.filter((a) => a.apiKey);
+      const ccFiles: FileQuota[] = ccAccounts.map((a) => {
+        const ccLabel = (a.label || '').trim();
+        return {
+          fileId: `commandcode:${a.id}`,
+          filename: ccLabel || 'Command Code',
           provider: 'Command Code',
           providerKey: 'commandcode',
           loading: false,
-          email: (useCommandCodeStore.getState().label || '').trim() || undefined,
+          email: ccLabel || undefined,
         };
-        setSections((prev) => prev.map((s) => (s.provider === 'commandcode' ? { ...s, files: [ccFile] } : s)));
+      });
+      if (ccFiles.length > 0) {
+        setSections((prev) => prev.map((s) => (s.provider === 'commandcode' ? { ...s, files: ccFiles } : s)));
       }
 
       files.forEach((file) => {
@@ -321,16 +351,16 @@ export function useQuotaPresenter() {
         }
       });
 
-      if (goConnected) {
-        setTimeout(() => fetchQuotaForFile('opencode-go'), 0);
+      for (const f of goFiles) {
+        setTimeout(() => fetchQuotaForFile(f.fileId), 0);
       }
 
-      if (grokConnected) {
-        setTimeout(() => fetchQuotaForFile('grok'), 0);
+      for (const f of grokFiles) {
+        setTimeout(() => fetchQuotaForFile(f.fileId), 0);
       }
 
-      if (commandcodeConnected) {
-        setTimeout(() => fetchQuotaForFile('commandcode'), 0);
+      for (const f of ccFiles) {
+        setTimeout(() => fetchQuotaForFile(f.fileId), 0);
       }
     } catch (err) {
       setError((err as Error).message);
@@ -345,9 +375,9 @@ export function useQuotaPresenter() {
 
   // Rebuild sections when display labels change elsewhere (e.g. renamed
   // on the Providers page while Quota stays mounted).
-  const goLabel = useOpenCodeGoStore((s) => s.label);
-  const grokLabel = useXaiStore((s) => s.label);
-  const ccLabel = useCommandCodeStore((s) => s.label);
+  const goAccountsSub = useOpenCodeGoStore((s) => s.accounts);
+  const grokAccountsSub = useXaiStore((s) => s.accounts);
+  const ccAccountsSub = useCommandCodeStore((s) => s.accounts);
   const oauthLabels = useAccountLabelsStore((s) => s.labels);
   const labelsMounted = useRef(false);
   useEffect(() => {
@@ -356,7 +386,7 @@ export function useQuotaPresenter() {
       return;
     }
     loadAuthFiles();
-  }, [goLabel, grokLabel, ccLabel, oauthLabels, loadAuthFiles]);
+  }, [goAccountsSub, grokAccountsSub, ccAccountsSub, oauthLabels, loadAuthFiles]);
 
   const filterItems: ProviderFilterItem[] = useMemo(() => {
     return sections

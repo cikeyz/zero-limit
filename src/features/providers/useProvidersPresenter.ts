@@ -130,12 +130,9 @@ export function useProvidersPresenter() {
 
   // Manual-credential trackers (no proxy auth file). Subscribed so the
   // synthetic Connected-Accounts groups below react to connect/disconnect.
-  const goApiKey = useOpenCodeGoStore((s) => s.apiKey);
-  const goWorkspaceId = useOpenCodeGoStore((s) => s.workspaceId);
-  const goAuthCookie = useOpenCodeGoStore((s) => s.authCookie);
-  const commandCodeApiKey = useCommandCodeStore((s) => s.apiKey);
-  const grokApiKey = useXaiStore((s) => s.apiKey);
-  const grokCliKey = useXaiStore((s) => s.cliKey);
+  const goAccounts = useOpenCodeGoStore((s) => s.accounts);
+  const commandCodeAccounts = useCommandCodeStore((s) => s.accounts);
+  const grokAccounts = useXaiStore((s) => s.accounts);
 
   const groupedFiles = useMemo(() => {
     const groups: Record<string, { displayName: string; files: AuthFile[]; iconInfo: { path: string; needsInvert: boolean } }> = {
@@ -164,52 +161,68 @@ export function useProvidersPresenter() {
 
     // Synthetic rows for manual-credential trackers (no downloadable auth file).
     // Extra keys ride on AuthFile's index signature; no type changes needed.
-    if (goApiKey || (goWorkspaceId && goAuthCookie)) {
+    // One row per connected account; the id suffix keeps fileHealth unique.
+    for (const account of goAccounts) {
+      if (!account.apiKey && !(account.workspaceId && account.authCookie)) continue;
+      const label = (account.label || '').trim();
       groups['opencode-go'].files.push({
-        id: 'synthetic-opencode-go',
-        filename: 'opencode-go-manual',
+        id: `synthetic-opencode-go:${account.id}`,
+        filename: `opencode-go-manual-${account.id}`,
         provider: 'opencode-go',
-        account: extractWorkspaceId(goWorkspaceId) || goWorkspaceId || 'OpenCode Go',
+        account: label || extractWorkspaceId(account.workspaceId) || account.workspaceId || 'OpenCode Go',
         isSynthetic: true,
         syntheticKind: 'opencode-go',
+        syntheticAccountId: account.id,
       });
     }
-    if (commandCodeApiKey) {
+    for (const account of commandCodeAccounts) {
+      if (!account.apiKey) continue;
+      const label = (account.label || '').trim();
       groups.commandcode.files.push({
-        id: 'synthetic-commandcode',
-        filename: 'commandcode-manual',
+        id: `synthetic-commandcode:${account.id}`,
+        filename: `commandcode-manual-${account.id}`,
         provider: 'commandcode',
-        account: 'Command Code',
+        account: label || 'Command Code',
         isSynthetic: true,
         syntheticKind: 'commandcode',
+        syntheticAccountId: account.id,
       });
     }
-    if (grokApiKey || grokCliKey) {
+    for (const account of grokAccounts) {
+      if (!account.apiKey && !account.cliKey) continue;
+      const label = (account.label || '').trim();
       groups.grok.files.push({
-        id: 'synthetic-grok',
-        filename: 'grok-manual',
+        id: `synthetic-grok:${account.id}`,
+        filename: `grok-manual-${account.id}`,
         provider: 'grok',
-        account: 'Grok',
+        account: label || 'Grok',
         isSynthetic: true,
         syntheticKind: 'grok',
+        syntheticAccountId: account.id,
       });
     }
 
     return Object.entries(groups).filter(([, group]) => group.files.length > 0);
-  }, [files, goApiKey, goWorkspaceId, goAuthCookie, commandCodeApiKey, grokApiKey, grokCliKey]);
+  }, [files, goAccounts, commandCodeAccounts, grokAccounts]);
 
   const toggleProviderExpanded = useCallback((providerId: string) => {
     setExpandedProviders(prev => ({ ...prev, [providerId]: !prev[providerId] }));
   }, []);
 
-  const disconnectSyntheticProvider = useCallback((kind: 'opencode-go' | 'commandcode' | 'grok') => {
+  const disconnectSyntheticProvider = useCallback((kind: 'opencode-go' | 'commandcode' | 'grok', accountId?: string) => {
+    // accountId may be the raw account id or a full synthetic file id
+    // (`synthetic-<kind>:<id>`); without it, disconnect all of that kind.
+    const raw = (accountId || '').trim();
+    const id = raw.includes(':') ? raw.slice(raw.lastIndexOf(':') + 1) : raw;
     if (kind === 'opencode-go') {
-      useOpenCodeGoStore.getState().clearCredentials();
+      if (id) useOpenCodeGoStore.getState().removeAccount(id);
+      else useOpenCodeGoStore.getState().clearAccounts();
     } else if (kind === 'grok') {
-      useXaiStore.getState().clearApiKey();
-      useXaiStore.getState().clearCliSession();
+      if (id) useXaiStore.getState().removeAccount(id);
+      else useXaiStore.getState().clearAccounts();
     } else {
-      useCommandCodeStore.getState().clearApiKey();
+      if (id) useCommandCodeStore.getState().removeAccount(id);
+      else useCommandCodeStore.getState().clearAccounts();
     }
     notifyAccountsChanged();
   }, []);

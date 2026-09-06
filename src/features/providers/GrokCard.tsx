@@ -5,10 +5,18 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { useXaiStore } from '@/features/providers/xai.store';
+import type { XaiAccount } from '@/features/providers/xai.store';
 import { xaiApi } from '@/services/api/xai.service';
 import { grokCliApi } from '@/services/api/grokCli.service';
 import { notifyAccountsChanged } from '@/features/providers/opencodeGo.store';
 import { isTauri } from '@/services/tauri';
+
+function accountFallback(account: XaiAccount): string {
+  if (account.label.trim()) return account.label.trim();
+  if (account.cliKey) return `CLI ••••${account.cliKey.slice(-4)}`;
+  if (account.apiKey) return `API ••••${account.apiKey.slice(-4)}`;
+  return 'Grok';
+}
 
 /**
  * Grok tracking with two methods:
@@ -16,32 +24,27 @@ import { isTauri } from '@/services/tauri';
  * - Grok CLI session: free-tier monthly/weekly usage from the CLI
  *   billing endpoints (session key + refresh token from
  *   ~/.grok/auth.json, refreshed automatically on expiry).
+ * Multiple accounts can be connected; each is validated before saving.
  */
 export function GrokCard() {
   const { t } = useTranslation();
-  const { apiKey, setApiKey, clearApiKey, cliKey, cliRefresh, setCliSession, clearCliSession, label, setLabel } = useXaiStore();
+  const { accounts, addAccount, removeAccount, setAccountLabel } = useXaiStore();
+  const [labelInput, setLabelInput] = useState('');
   const [keyInput, setKeyInput] = useState('');
   const [cliKeyInput, setCliKeyInput] = useState('');
   const [cliRefreshInput, setCliRefreshInput] = useState('');
   const [checking, setChecking] = useState<'key' | 'cli' | 'auto' | null>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const keyConnected = Boolean(apiKey);
-  const cliConnected = Boolean(cliKey);
-
-  const connectCliSession = async (key: string, refresh: string) => {
+  const resolveCliSession = async (key: string, refresh: string) => {
     const result = await grokCliApi.fetchQuota(key, refresh || undefined);
     if (result.error || result.models.length === 0) {
       throw new Error(result.error || t('grok.noCliData', 'No Grok CLI usage returned. Check your session key.'));
     }
     if (result.refreshed) {
-      setCliSession(result.refreshed.key, result.refreshed.refresh);
-    } else {
-      setCliSession(key, refresh);
+      return { key: result.refreshed.key, refresh: result.refreshed.refresh };
     }
-    setCliKeyInput('');
-    setCliRefreshInput('');
-    notifyAccountsChanged();
+    return { key, refresh };
   };
 
   const handleAutoDetectCli = async () => {
@@ -67,7 +70,10 @@ export function GrokCard() {
       if (!found) {
         throw new Error(t('grok.noLocalSession', 'No Grok CLI session found. Run grok login first.'));
       }
-      await connectCliSession(found.key, found.refresh);
+      const session = await resolveCliSession(found.key, found.refresh);
+      addAccount({ label: labelInput.trim(), apiKey: '', cliKey: session.key, cliRefresh: session.refresh });
+      setLabelInput('');
+      notifyAccountsChanged();
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -89,8 +95,9 @@ export function GrokCard() {
         setError(result.error || t('grok.noData', 'No credit data returned. Check your API key.'));
         return;
       }
-      setApiKey(key);
+      addAccount({ label: labelInput.trim(), apiKey: key, cliKey: '', cliRefresh: '' });
       setKeyInput('');
+      setLabelInput('');
       notifyAccountsChanged();
     } catch (err) {
       setError((err as Error).message);
@@ -109,12 +116,23 @@ export function GrokCard() {
     }
     setChecking('cli');
     try {
-      await connectCliSession(key, refresh);
+      const session = await resolveCliSession(key, refresh);
+      addAccount({ label: labelInput.trim(), apiKey: '', cliKey: session.key, cliRefresh: session.refresh });
+      setCliKeyInput('');
+      setCliRefreshInput('');
+      setLabelInput('');
+      notifyAccountsChanged();
     } catch (err) {
       setError((err as Error).message);
     } finally {
       setChecking(null);
     }
+  };
+
+  const handleDisconnect = (id: string) => {
+    removeAccount(id);
+    setError(null);
+    notifyAccountsChanged();
   };
 
   return (
@@ -131,71 +149,81 @@ export function GrokCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-4">
+        {error && <p className="text-sm text-destructive">{error}</p>}
+
+        {accounts.map((account) => (
+          <div key={account.id} className="space-y-2 rounded-lg border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <div className="min-w-0">
+                <p className="truncate text-sm font-medium">{accountFallback(account)}</p>
+                <p className="text-xs text-muted-foreground">
+                  {account.cliKey
+                    ? t('grok.cliMethod', 'Grok CLI session (free tier)')
+                    : t('grok.apiKeyMethod', 'xAI console API key')}
+                </p>
+              </div>
+              <Button variant="outline" size="sm" onClick={() => handleDisconnect(account.id)}>
+                {account.cliKey && !account.apiKey
+                  ? t('grok.disconnectCli', 'Disconnect CLI session')
+                  : t('grok.disconnect', 'Disconnect')}
+              </Button>
+            </div>
+            <Input
+              placeholder={t('grok.labelPlaceholder', 'Display name (optional)')}
+              value={account.label}
+              onChange={(e) => setAccountLabel(account.id, e.target.value)}
+            />
+          </div>
+        ))}
+
         <Input
           placeholder={t('grok.labelPlaceholder', 'Display name (optional)')}
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
+          value={labelInput}
+          onChange={(e) => setLabelInput(e.target.value)}
         />
-        {error && <p className="text-sm text-destructive">{error}</p>}
 
         <div className="space-y-3">
           <p className="text-sm font-medium">{t('grok.apiKeyMethod', 'xAI console API key')}</p>
-          {keyConnected ? (
-            <Button variant="outline" className="w-full" onClick={() => { clearApiKey(); notifyAccountsChanged(); }}>
-              {t('grok.disconnect', 'Disconnect')}
-            </Button>
-          ) : (
-            <>
-              <Input
-                type="password"
-                placeholder={t('grok.keyPlaceholder', 'xAI API key (xai-...)')}
-                value={keyInput}
-                onChange={(e) => setKeyInput(e.target.value)}
-              />
-              <Button className="w-full" onClick={handleConnectKey} disabled={checking !== null}>
-                {checking === 'key' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('grok.connect', 'Connect')}
-              </Button>
-            </>
-          )}
+          <Input
+            type="password"
+            placeholder={t('grok.keyPlaceholder', 'xAI API key (xai-...)')}
+            value={keyInput}
+            onChange={(e) => setKeyInput(e.target.value)}
+          />
+          <Button className="w-full" onClick={handleConnectKey} disabled={checking !== null}>
+            {checking === 'key' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t('grok.connect', 'Connect')}
+          </Button>
         </div>
 
         <div className="space-y-3 border-t pt-4">
           <p className="text-sm font-medium">{t('grok.cliMethod', 'Grok CLI session (free tier)')}</p>
-          {cliConnected ? (
-            <Button variant="outline" className="w-full" onClick={() => { clearCliSession(); setError(null); notifyAccountsChanged(); }}>
-              {t('grok.disconnectCli', 'Disconnect CLI session')}
-            </Button>
-          ) : (
-            <>
-              <Button className="w-full" onClick={handleAutoDetectCli} disabled={checking !== null}>
-                {checking === 'auto' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('grok.autoDetect', 'Auto-detect from Grok CLI')}
-              </Button>
-              <Input
-                type="password"
-                placeholder={t('grok.cliKeyPlaceholder', 'Session key (.key in ~/.grok/auth.json)')}
-                value={cliKeyInput}
-                onChange={(e) => setCliKeyInput(e.target.value)}
-              />
-              <Input
-                type="password"
-                placeholder={t('grok.cliRefreshPlaceholder', 'Refresh token (refresh_token, enables auto-refresh)')}
-                value={cliRefreshInput}
-                onChange={(e) => setCliRefreshInput(e.target.value)}
-              />
-              <p className="text-xs text-muted-foreground">
-                {t(
-                  'grok.cliHelp',
-                  'Copy .key and .refresh_token from the auth.x.ai entry in ~/.grok/auth.json (created by grok login). Session keys expire after about 7 days; with a refresh token ZeroLimit renews automatically.'
-                )}
-              </p>
-              <Button className="w-full" onClick={handleConnectCli} disabled={checking !== null}>
-                {checking === 'cli' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                {t('grok.connectCli', 'Connect CLI session')}
-              </Button>
-            </>
-          )}
+          <Button className="w-full" onClick={handleAutoDetectCli} disabled={checking !== null}>
+            {checking === 'auto' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t('grok.autoDetect', 'Auto-detect from Grok CLI')}
+          </Button>
+          <Input
+            type="password"
+            placeholder={t('grok.cliKeyPlaceholder', 'Session key (.key in ~/.grok/auth.json)')}
+            value={cliKeyInput}
+            onChange={(e) => setCliKeyInput(e.target.value)}
+          />
+          <Input
+            type="password"
+            placeholder={t('grok.cliRefreshPlaceholder', 'Refresh token (refresh_token, enables auto-refresh)')}
+            value={cliRefreshInput}
+            onChange={(e) => setCliRefreshInput(e.target.value)}
+          />
+          <p className="text-xs text-muted-foreground">
+            {t(
+              'grok.cliHelp',
+              'Copy .key and .refresh_token from the auth.x.ai entry in ~/.grok/auth.json (created by grok login). Session keys expire after about 7 days; with a refresh token ZeroLimit renews automatically.'
+            )}
+          </p>
+          <Button className="w-full" onClick={handleConnectCli} disabled={checking !== null}>
+            {checking === 'cli' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            {t('grok.connectCli', 'Connect CLI session')}
+          </Button>
         </div>
       </CardContent>
     </Card>

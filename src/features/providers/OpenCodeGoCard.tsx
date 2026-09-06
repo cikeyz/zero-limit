@@ -5,26 +5,38 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { notifyAccountsChanged, useOpenCodeGoStore } from '@/features/providers/opencodeGo.store';
+import type { OpenCodeGoAccount } from '@/features/providers/opencodeGo.store';
 import { opencodeGoApi, extractWorkspaceId } from '@/services/api/opencodeGo.service';
 import { isTauri } from '@/services/tauri';
 
 type Checking = 'auto' | 'manual' | null;
+
+function accountFallback(account: OpenCodeGoAccount): string {
+  if (account.label.trim()) return account.label.trim();
+  return (
+    extractWorkspaceId(account.workspaceId) ||
+    account.workspaceId ||
+    (account.apiKey ? `••••${account.apiKey.slice(-4)}` : 'OpenCode Go')
+  );
+}
 
 /**
  * OpenCode Go subscription tracking.
  * Preferred: official usage API with the local opencode-go key
  * (auto-detected from the OpenCode config, desktop app only).
  * Fallback: workspace ID + auth cookie page scrape.
+ * Multiple accounts can be connected; each is validated before saving.
  */
 export function OpenCodeGoCard() {
   const { t } = useTranslation();
-  const { apiKey, workspaceId, authCookie, label, setApiKey, setCredentials, clearCredentials, setLabel } = useOpenCodeGoStore();
-  const [widInput, setWidInput] = useState(workspaceId);
+  const { accounts, addAccount, removeAccount, setAccountLabel } = useOpenCodeGoStore();
+  const [widInput, setWidInput] = useState('');
   const [cookieInput, setCookieInput] = useState('');
+  const [labelInput, setLabelInput] = useState('');
   const [checking, setChecking] = useState<Checking>(null);
   const [error, setError] = useState<string | null>(null);
 
-  const connected = Boolean(apiKey || (workspaceId && authCookie));
+  const connected = accounts.length > 0;
 
   const handleAutoDetect = async () => {
     setError(null);
@@ -48,7 +60,8 @@ export function OpenCodeGoCard() {
       if (result.error || result.models.length === 0) {
         throw new Error(result.error || t('opencodeGo.noData', 'No quota data returned.'));
       }
-      setApiKey(key);
+      addAccount({ label: labelInput.trim(), apiKey: key, workspaceId: '', authCookie: '' });
+      setLabelInput('');
       notifyAccountsChanged();
     } catch (err) {
       setError((err as Error).message);
@@ -72,8 +85,9 @@ export function OpenCodeGoCard() {
         setError(result.error || t('opencodeGo.noData', 'No quota data returned. Check your credentials.'));
         return;
       }
-      setCredentials(wid, cookie);
+      addAccount({ label: labelInput.trim(), apiKey: '', workspaceId: wid, authCookie: cookie });
       setCookieInput('');
+      setLabelInput('');
       notifyAccountsChanged();
     } catch (err) {
       setError((err as Error).message);
@@ -82,10 +96,8 @@ export function OpenCodeGoCard() {
     }
   };
 
-  const handleDisconnect = () => {
-    clearCredentials();
-    setWidInput('');
-    setCookieInput('');
+  const handleDisconnect = (id: string) => {
+    removeAccount(id);
     setError(null);
     notifyAccountsChanged();
   };
@@ -106,50 +118,57 @@ export function OpenCodeGoCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
-        <Input
-          placeholder={t('opencodeGo.labelPlaceholder', 'Display name (optional)')}
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
-        />
         {error && <p className="text-sm text-destructive">{error}</p>}
-        {connected ? (
-          <Button variant="outline" className="w-full" onClick={handleDisconnect}>
-            {t('opencodeGo.disconnect', 'Disconnect')}
-          </Button>
-        ) : (
-          <>
-            <Button className="w-full" onClick={handleAutoDetect} disabled={checking !== null}>
-              {checking === 'auto' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('opencodeGo.autoDetect', 'Auto-detect from OpenCode config')}
-            </Button>
-            <div className="flex items-center gap-2 text-xs text-muted-foreground">
-              <span className="h-px flex-1 bg-border" />
-              {t('opencodeGo.orManual', 'or enter manually')}
-              <span className="h-px flex-1 bg-border" />
+        {accounts.map((account) => (
+          <div key={account.id} className="space-y-2 rounded-lg border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-sm font-medium">{accountFallback(account)}</span>
+              <Button variant="outline" size="sm" onClick={() => handleDisconnect(account.id)}>
+                {t('opencodeGo.disconnect', 'Disconnect')}
+              </Button>
             </div>
             <Input
-              placeholder={t('opencodeGo.workspacePlaceholder', 'Workspace ID (wrk_...) or Go page URL')}
-              value={widInput}
-              onChange={(e) => setWidInput(e.target.value)}
+              placeholder={t('opencodeGo.labelPlaceholder', 'Display name (optional)')}
+              value={account.label}
+              onChange={(e) => setAccountLabel(account.id, e.target.value)}
             />
-            <Input
-              type="password"
-              placeholder={t('opencodeGo.cookiePlaceholder', 'Auth cookie (from opencode.ai, starts with Fe26.2**)')}
-              value={cookieInput}
-              onChange={(e) => setCookieInput(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t(
-                'opencodeGo.cookieHelp',
-                'Log in at opencode.ai, open the Go page for your workspace, and copy the auth cookie from browser devtools (Application > Cookies). The cookie expires periodically and will need re-entering.'
-              )}
-            </p>
-            <Button className="w-full" variant="outline" onClick={handleConnect} disabled={checking !== null}>
-              {checking === 'manual' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('opencodeGo.connect', 'Connect')}
-            </Button>
-          </>
-        )}
+          </div>
+        ))}
+        <Input
+          placeholder={t('opencodeGo.labelPlaceholder', 'Display name (optional)')}
+          value={labelInput}
+          onChange={(e) => setLabelInput(e.target.value)}
+        />
+        <Button className="w-full" onClick={handleAutoDetect} disabled={checking !== null}>
+          {checking === 'auto' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {t('opencodeGo.autoDetect', 'Auto-detect from OpenCode config')}
+        </Button>
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <span className="h-px flex-1 bg-border" />
+          {t('opencodeGo.orManual', 'or enter manually')}
+          <span className="h-px flex-1 bg-border" />
+        </div>
+        <Input
+          placeholder={t('opencodeGo.workspacePlaceholder', 'Workspace ID (wrk_...) or Go page URL')}
+          value={widInput}
+          onChange={(e) => setWidInput(e.target.value)}
+        />
+        <Input
+          type="password"
+          placeholder={t('opencodeGo.cookiePlaceholder', 'Auth cookie (from opencode.ai, starts with Fe26.2**)')}
+          value={cookieInput}
+          onChange={(e) => setCookieInput(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          {t(
+            'opencodeGo.cookieHelp',
+            'Log in at opencode.ai, open the Go page for your workspace, and copy the auth cookie from browser devtools (Application > Cookies). The cookie expires periodically and will need re-entering.'
+          )}
+        </p>
+        <Button className="w-full" variant="outline" onClick={handleConnect} disabled={checking !== null}>
+          {checking === 'manual' && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {t('opencodeGo.connect', 'Connect')}
+        </Button>
       </CardContent>
     </Card>
   );

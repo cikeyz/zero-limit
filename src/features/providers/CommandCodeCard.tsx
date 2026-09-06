@@ -5,22 +5,31 @@ import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Loader2 } from 'lucide-react';
 import { useCommandCodeStore } from '@/features/providers/commandcode.store';
+import type { CommandCodeAccount } from '@/features/providers/commandcode.store';
 import { commandcodeApi } from '@/services/api/commandcode.service';
 import { notifyAccountsChanged } from '@/features/providers/opencodeGo.store';
+
+function accountFallback(account: CommandCodeAccount): string {
+  if (account.label.trim()) return account.label.trim();
+  if (account.apiKey) return `••••${account.apiKey.slice(-4)}`;
+  return 'Command Code';
+}
 
 /**
  * Manual credential card for Command Code (GOAT and other plans).
  * Uses the CLI API key from ~/.commandcode/auth.json against the
  * internal usage endpoints (whoami, billing/credits, billing/subscriptions).
+ * Multiple accounts can be connected; each is validated before saving.
  */
 export function CommandCodeCard() {
   const { t } = useTranslation();
-  const { apiKey, setApiKey, clearApiKey, label, setLabel } = useCommandCodeStore();
+  const { accounts, addAccount, removeAccount, setAccountLabel } = useCommandCodeStore();
+  const [labelInput, setLabelInput] = useState('');
   const [keyInput, setKeyInput] = useState('');
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const connected = Boolean(apiKey);
+  const connected = accounts.length > 0;
 
   const handleConnect = async () => {
     setError(null);
@@ -36,8 +45,9 @@ export function CommandCodeCard() {
         setError(result.error || t('commandcode.noData', 'No usage data returned. Check your API key.'));
         return;
       }
-      setApiKey(key);
+      addAccount({ label: labelInput.trim(), apiKey: key });
       setKeyInput('');
+      setLabelInput('');
       notifyAccountsChanged();
     } catch (err) {
       setError((err as Error).message);
@@ -46,9 +56,8 @@ export function CommandCodeCard() {
     }
   };
 
-  const handleDisconnect = () => {
-    clearApiKey();
-    setKeyInput('');
+  const handleDisconnect = (id: string) => {
+    removeAccount(id);
     setError(null);
     notifyAccountsChanged();
   };
@@ -69,36 +78,43 @@ export function CommandCodeCard() {
         </div>
       </CardHeader>
       <CardContent className="space-y-3">
+        {error && <p className="text-sm text-destructive">{error}</p>}
+        {accounts.map((account) => (
+          <div key={account.id} className="space-y-2 rounded-lg border p-3">
+            <div className="flex items-center justify-between gap-2">
+              <span className="truncate text-sm font-medium">{accountFallback(account)}</span>
+              <Button variant="outline" size="sm" onClick={() => handleDisconnect(account.id)}>
+                {t('commandcode.disconnect', 'Disconnect')}
+              </Button>
+            </div>
+            <Input
+              placeholder={t('commandcode.labelPlaceholder', 'Display name (optional)')}
+              value={account.label}
+              onChange={(e) => setAccountLabel(account.id, e.target.value)}
+            />
+          </div>
+        ))}
         <Input
           placeholder={t('commandcode.labelPlaceholder', 'Display name (optional)')}
-          value={label}
-          onChange={(e) => setLabel(e.target.value)}
+          value={labelInput}
+          onChange={(e) => setLabelInput(e.target.value)}
         />
-        {error && <p className="text-sm text-destructive">{error}</p>}
-        {connected ? (
-          <Button variant="outline" className="w-full" onClick={handleDisconnect}>
-            {t('commandcode.disconnect', 'Disconnect')}
-          </Button>
-        ) : (
-          <>
-            <Input
-              type="password"
-              placeholder={t('commandcode.keyPlaceholder', 'API key from ~/.commandcode/auth.json')}
-              value={keyInput}
-              onChange={(e) => setKeyInput(e.target.value)}
-            />
-            <p className="text-xs text-muted-foreground">
-              {t(
-                'commandcode.keyHelp',
-                'Find it in the apiKey field of ~/.commandcode/auth.json (created by cmd login). Shows monthly credits plus live 5-hour and weekly windows.'
-              )}
-            </p>
-            <Button className="w-full" onClick={handleConnect} disabled={checking}>
-              {checking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {t('commandcode.connect', 'Connect')}
-            </Button>
-          </>
-        )}
+        <Input
+          type="password"
+          placeholder={t('commandcode.keyPlaceholder', 'API key from ~/.commandcode/auth.json')}
+          value={keyInput}
+          onChange={(e) => setKeyInput(e.target.value)}
+        />
+        <p className="text-xs text-muted-foreground">
+          {t(
+            'commandcode.keyHelp',
+            'Find it in the apiKey field of ~/.commandcode/auth.json (created by cmd login). Shows monthly credits plus live 5-hour and weekly windows.'
+          )}
+        </p>
+        <Button className="w-full" onClick={handleConnect} disabled={checking}>
+          {checking && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+          {t('commandcode.connect', 'Connect')}
+        </Button>
       </CardContent>
     </Card>
   );

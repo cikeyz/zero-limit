@@ -445,7 +445,7 @@ export function ProvidersPage() {
                                       size="icon"
                                       variant="ghost"
                                       className="h-8 w-8 text-destructive hover:bg-destructive/10 opacity-80 group-hover:opacity-100"
-                                      onClick={() => syntheticKind ? disconnectSyntheticProvider(syntheticKind) : setFileToDelete(file.id)}
+                                      onClick={() => syntheticKind ? disconnectSyntheticProvider(syntheticKind, (file.syntheticAccountId as string) || file.id) : setFileToDelete(file.id)}
                                       title={syntheticKind ? t('common.disconnect', 'Disconnect') : t('common.delete')}
                                     >
                                       <Trash2 className="h-4 w-4" />
