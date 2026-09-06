@@ -49,7 +49,7 @@ export function CompactQuotaCard({
   const isSuspended = plan?.toLowerCase() === 'suspended';
 
   // Apply masking
-  const displayEmail = isPrivacyMode ? maskEmail(email || '') : (email || filename || '');
+  const displayEmail = isPrivacyMode ? maskEmail(email || '********@*****.com') : (email || filename || '');
 
   // Group items by model type (for Antigravity) or show as-is (for Codex limits)
   const groupedItems = useMemo(() => {
@@ -170,10 +170,15 @@ export function CompactQuotaCard({
                   ) : (
                     <div className="text-xl font-bold tracking-tight">{item.percentage}{item.used ? '% used' : '%'}</div>
                   )}
-                  {(item.detail || item.resetTime) && (
+                  {(item.detail || item.resetTime) && !item.separate && (
                     <div className="mt-0.5 flex items-center gap-2 text-[10px] text-muted-foreground">
                       {item.detail && <span>{item.detail}</span>}
                       {item.resetTime && <span>Resets {item.resetTime}</span>}
+                    </div>
+                  )}
+                  {item.separate && item.detail && (
+                    <div className="mt-0.5 text-[10px] text-muted-foreground">
+                      <span>{item.detail}</span>
                     </div>
                   )}
                 </div>
@@ -282,7 +287,7 @@ export function CompactQuotaCard({
                               />
                             </div>
                           )}
-                          {item.resetTime && (
+                          {item.resetTime && !item.separate && (
                             <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                               <Clock className="h-3 w-3" />
                               <span>Reset: {item.resetTime}</span>

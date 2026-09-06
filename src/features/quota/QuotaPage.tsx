@@ -143,7 +143,7 @@ export function QuotaPage() {
                 fileId={file.fileId}
                 filename={file.filename}
                 provider={file.provider}
-                email={file.email || file.originalFile?.account || '********@*****.com'}
+                email={file.email || file.originalFile?.account}
                 loading={file.loading}
                 error={file.error}
                 items={items}
@@ -164,7 +164,7 @@ export function QuotaPage() {
                 fileId={file.fileId}
                 filename={file.filename}
                 provider={file.provider}
-                email={file.email || file.originalFile?.account || '********@*****.com'}
+                email={file.email || file.originalFile?.account}
                 loading={file.loading}
                 error={file.error}
                 items={items}

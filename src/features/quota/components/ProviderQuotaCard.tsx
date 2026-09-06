@@ -41,7 +41,7 @@ export function ProviderQuotaCard({
 }: ProviderQuotaCardProps) {
   const { t } = useTranslation();
 
-  const displayEmail = isPrivacyMode ? maskEmail(email || '') : (email || '********@*****.com');
+  const displayEmail = isPrivacyMode ? maskEmail(email || '********@*****.com') : (email || filename || '');
   const displayFilename = isPrivacyMode ? maskFolder(filename) : filename;
 
   const groupedItems = useMemo(() => {
@@ -252,7 +252,7 @@ export function ProviderQuotaCard({
                                                 </div>
                                                 </>
                                                 )}
-                                                {item.resetTime && (
+                                                {item.resetTime && !item.separate && (
                                                     <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
                                                         <Clock className="h-3 w-3" />
                                                         <span>Reset: {item.resetTime}</span>
@@ -340,12 +340,6 @@ export function ProviderQuotaCard({
                                 </div>
                                 <div className="mt-1 flex items-center gap-2 text-xs text-muted-foreground">
                                     {item.detail && <span>{item.detail}</span>}
-                                    {item.resetTime && (
-                                        <span className="flex items-center gap-1">
-                                            <Clock className="h-3 w-3" />
-                                            <span>Resets {item.resetTime}</span>
-                                        </span>
-                                    )}
                                 </div>
                             </div>
                         ))}
