@@ -29,6 +29,7 @@ import {
 } from '@/shared/components/ui/tabs'
 
 import { useLogsPresenter, LogTab } from './useLogsPresenter'
+import { toast } from 'sonner'
 
 function formatBytes(bytes: number, decimals = 2) {
   if (!+bytes) return '0 Bytes'
@@ -110,12 +111,10 @@ export function LogsPage() {
                 })
                 if (filePath) {
                   await writeTextFile(filePath, content)
-                  const { toast } = await import('sonner')
                   toast.success(t('logs.saved'), { description: filePath })
                 }
               } catch (err) {
                 console.error('Failed to save logs:', err)
-                const { toast } = await import('sonner')
                 toast.error(t('logs.saveFailed'))
               }
             }}>

@@ -1,9 +1,6 @@
 import type { QuotaModel, CursorQuotaResult } from '@/types';
-import { formatTimeUntil, normalizeNumberValue } from '@/shared/utils/quota.helpers';
+import { clampPct, formatTimeUntil, normalizeNumberValue } from '@/shared/utils/quota.helpers';
 
-function clampPct(value: number): number {
-  return Math.min(100, Math.max(0, Math.round(value)));
-}
 
 // Parses POST /aiserver.v1.DashboardService/GetCurrentPeriodUsage.
 // Dashboard reports percent USED, which is what the UI renders.

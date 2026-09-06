@@ -1,5 +1,5 @@
 import type { QuotaModel } from '@/types';
-import { formatTimeUntil } from '@/shared/utils/quota.helpers';
+import { clampPct, formatTimeUntil } from '@/shared/utils/quota.helpers';
 
 export function parseAntigravityModels(body: unknown): QuotaModel[] {
   const models: QuotaModel[] = [];
@@ -109,9 +109,6 @@ export function parseAntigravityModels(body: unknown): QuotaModel[] {
   return models.sort((a, b) => a.name.localeCompare(b.name));
 }
 
-function clampPct(value: number): number {
-  return Math.min(100, Math.max(0, Math.round(value)));
-}
 
 /**
  * Parses POST /v1internal:retrieveUserQuotaSummary — the same grouped

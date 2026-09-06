@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import { secureStorage } from '@/services/storage/secureStorage';
+import { fileWorstUsed, accountLabel } from '@/shared/utils/quota.helpers';
 import type { FileQuota, ProviderSection } from '@/types';
 
 const STORAGE_KEY = 'quota-history';
@@ -22,23 +23,6 @@ export interface HistoryAccount {
 export interface QuotaSnapshot {
   t: number;
   accounts: HistoryAccount[];
-}
-
-function worstOf(f: FileQuota): number | null {
-  let worst: number | null = null;
-  for (const m of f.models ?? []) {
-    if (m.separate || typeof m.percentage !== 'number') continue;
-    if (worst === null || m.percentage > worst) worst = m.percentage;
-  }
-  for (const l of f.limits ?? []) {
-    if (typeof l.percentage !== 'number') continue;
-    if (worst === null || l.percentage > worst) worst = l.percentage;
-  }
-  return worst;
-}
-
-function labelOf(f: FileQuota): string {
-  return f.email || f.filename.replace(/_gmail_com/g, '').replace(/\.json$/g, '');
 }
 
 function snapshotKey(s: QuotaSnapshot): string {
@@ -82,13 +66,13 @@ export const useHistoryStore = create<HistoryState>()(
         for (const s of sections) {
           for (const f of s.files) {
             if (f.loading || f.error) continue;
-            const worst = worstOf(f);
+            const worst = fileWorstUsed(f);
             if (worst === null) continue;
             accounts.push({
               fileId: f.fileId,
               provider: s.provider,
               displayName: s.displayName,
-              label: labelOf(f),
+              label: accountLabel(f),
               worst,
             });
           }

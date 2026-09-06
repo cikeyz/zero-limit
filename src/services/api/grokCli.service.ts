@@ -1,5 +1,5 @@
 import { apiCallApi } from './apiCall';
-import { formatTimeUntil, normalizeNumberValue } from '@/shared/utils/quota.helpers';
+import { clampPct, formatTimeUntil, normalizeNumberValue } from '@/shared/utils/quota.helpers';
 import type { QuotaModel } from '@/types';
 
 export interface GrokCliQuotaResult {
@@ -13,9 +13,6 @@ const BASE = 'https://cli-chat-proxy.grok.com/v1';
 const TOKEN_URL = 'https://auth.x.ai/oauth2/token';
 const CLIENT_ID = 'b1a00492-073a-47ea-816f-4c329264a828';
 
-function clampPct(value: number): number {
-  return Math.min(100, Math.max(0, Math.round(value)));
-}
 
 function cliHeaders(key: string): Record<string, string> {
   return {

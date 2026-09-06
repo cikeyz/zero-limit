@@ -1,13 +1,10 @@
 import { apiCallApi } from './apiCall';
-import { normalizeNumberValue } from '@/shared/utils/quota.helpers';
+import { clampPct, normalizeNumberValue } from '@/shared/utils/quota.helpers';
 import type { GrokQuotaResult, QuotaModel } from '@/types';
 
 const API_KEY_URL = 'https://api.x.ai/v1/api-key';
 const MODELS_URL = 'https://api.x.ai/v1/models';
 
-function clampPct(value: number): number {
-  return Math.min(100, Math.max(0, Math.round(value)));
-}
 
 function firstHeader(headers: Record<string, string[]>, name: string): string | null {
   for (const [key, values] of Object.entries(headers || {})) {

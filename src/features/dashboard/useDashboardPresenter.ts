@@ -7,7 +7,7 @@ import { authFilesApi } from '@/services/api/auth.service';
 import { useQuotaPresenter, ICON_MAP } from '@/features/quota/useQuotaPresenter';
 import { getMachineUsage, type MachineUsageTotals } from '@/services/api/machineUsage.service';
 import { useHistoryStore } from '@/features/dashboard/history.store';
-import type { FileQuota } from '@/types';
+import { fileWorstUsed, accountLabel } from '@/shared/utils/quota.helpers';
 
 const HISTORY_COLORS = [
   '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7',
@@ -43,18 +43,6 @@ export interface AttentionItem {
 
 const ATTENTION_THRESHOLD = 90;
 
-/** Highest consumed-% on one account, ignoring display-only (separate) lines like burn totals. */
-export function fileWorstUsed(f: FileQuota): number | null {
-  const vals: number[] = [];
-  for (const m of f.models ?? []) {
-    if (!m.separate && typeof m.percentage === 'number') vals.push(m.percentage);
-  }
-  for (const l of f.limits ?? []) {
-    if (typeof l.percentage === 'number') vals.push(l.percentage);
-  }
-  return vals.length > 0 ? Math.max(...vals) : null;
-}
-
 export interface LiveUsageRow {
   fileId: string;
   label: string;
@@ -68,10 +56,6 @@ export function formatCompact(num: number): string {
   if (num >= 1_000_000) return `${(num / 1_000_000).toFixed(2)}M`;
   if (num >= 1_000) return `${(num / 1_000).toFixed(1)}K`;
   return Math.round(num).toString();
-}
-
-export function accountLabel(f: FileQuota): string {
-  return f.email || f.filename.replace(/_gmail_com/g, '').replace(/\.json$/g, '');
 }
 
 export function useDashboardPresenter() {

@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { ConnectedAccountRow } from '@/features/providers/ConnectedAccountRow';
 import { useXaiStore } from '@/features/providers/xai.store';
 import type { XaiAccount } from '@/features/providers/xai.store';
 import { xaiApi } from '@/services/api/xai.service';
@@ -152,28 +153,24 @@ export function GrokCard() {
         {error && <p className="text-sm text-destructive">{error}</p>}
 
         {accounts.map((account) => (
-          <div key={account.id} className="space-y-2 rounded-lg border p-3">
-            <div className="flex items-center justify-between gap-2">
-              <div className="min-w-0">
-                <p className="truncate text-sm font-medium">{accountFallback(account)}</p>
-                <p className="text-xs text-muted-foreground">
-                  {account.cliKey
-                    ? t('grok.cliMethod', 'Grok CLI session (free tier)')
-                    : t('grok.apiKeyMethod', 'xAI console API key')}
-                </p>
-              </div>
-              <Button variant="outline" size="sm" onClick={() => handleDisconnect(account.id)}>
-                {account.cliKey && !account.apiKey
-                  ? t('grok.disconnectCli', 'Disconnect CLI session')
-                  : t('grok.disconnect', 'Disconnect')}
-              </Button>
-            </div>
-            <Input
-              placeholder={t('grok.labelPlaceholder', 'Display name (optional)')}
-              value={account.label}
-              onChange={(e) => setAccountLabel(account.id, e.target.value)}
-            />
-          </div>
+          <ConnectedAccountRow
+            key={account.id}
+            fallback={accountFallback(account)}
+            method={
+              account.cliKey
+                ? t('grok.cliMethod', 'Grok CLI session (free tier)')
+                : t('grok.apiKeyMethod', 'xAI console API key')
+            }
+            label={account.label}
+            labelPlaceholder={t('grok.labelPlaceholder', 'Display name (optional)')}
+            disconnectLabel={
+              account.cliKey && !account.apiKey
+                ? t('grok.disconnectCli', 'Disconnect CLI session')
+                : t('grok.disconnect', 'Disconnect')
+            }
+            onDisconnect={() => handleDisconnect(account.id)}
+            onLabel={(value) => setAccountLabel(account.id, value)}
+          />
         ))}
 
         <Input

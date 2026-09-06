@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/sha
 import { Button } from '@/shared/components/ui/button';
 import { Input } from '@/shared/components/ui/input';
 import { Loader2 } from 'lucide-react';
+import { ConnectedAccountRow } from '@/features/providers/ConnectedAccountRow';
 import { notifyAccountsChanged, useOpenCodeGoStore } from '@/features/providers/opencodeGo.store';
 import type { OpenCodeGoAccount } from '@/features/providers/opencodeGo.store';
 import { opencodeGoApi, extractWorkspaceId } from '@/services/api/opencodeGo.service';
@@ -120,19 +121,15 @@ export function OpenCodeGoCard() {
       <CardContent className="space-y-3">
         {error && <p className="text-sm text-destructive">{error}</p>}
         {accounts.map((account) => (
-          <div key={account.id} className="space-y-2 rounded-lg border p-3">
-            <div className="flex items-center justify-between gap-2">
-              <span className="truncate text-sm font-medium">{accountFallback(account)}</span>
-              <Button variant="outline" size="sm" onClick={() => handleDisconnect(account.id)}>
-                {t('opencodeGo.disconnect', 'Disconnect')}
-              </Button>
-            </div>
-            <Input
-              placeholder={t('opencodeGo.labelPlaceholder', 'Display name (optional)')}
-              value={account.label}
-              onChange={(e) => setAccountLabel(account.id, e.target.value)}
-            />
-          </div>
+          <ConnectedAccountRow
+            key={account.id}
+            fallback={accountFallback(account)}
+            label={account.label}
+            labelPlaceholder={t('opencodeGo.labelPlaceholder', 'Display name (optional)')}
+            disconnectLabel={t('opencodeGo.disconnect', 'Disconnect')}
+            onDisconnect={() => handleDisconnect(account.id)}
+            onLabel={(value) => setAccountLabel(account.id, value)}
+          />
         ))}
         <Input
           placeholder={t('opencodeGo.labelPlaceholder', 'Display name (optional)')}

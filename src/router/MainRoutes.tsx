@@ -11,7 +11,7 @@ import { AboutPage } from '@/features/about/AboutPage';
 import { LogsPage } from '@/features/logs/LogsPage';
 
 const mainRoutes = [
-  { path: '/', element: <DashboardPage /> },
+  { path: '/', element: <Navigate to="/dashboard" replace /> },
   { path: '/dashboard', element: <DashboardPage /> },
   { path: '/settings', element: <SettingsPage /> },
   { path: '/providers', element: <ProvidersPage /> },

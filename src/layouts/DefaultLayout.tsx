@@ -7,10 +7,11 @@ import {
   PanelLeftClose,
   PanelLeftOpen,
 } from 'lucide-react'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useAuthStore } from '@/features/auth/auth.store'
-import { useInterval, useAppVersion } from '@/shared/hooks'
+import { useAppVersion } from '@/shared/hooks'
 import { NAV_ITEMS } from '@/constants'
+import { AUTH_CHECK_INTERVAL_MS } from '@/constants'
 
 
 function Default({ children }: { children: React.ReactNode }) {
@@ -22,11 +23,14 @@ function Default({ children }: { children: React.ReactNode }) {
   const version = useAppVersion()
 
   // Real-time connection check every 5 seconds
-  useInterval(() => {
-    checkAuth().catch(() => {
+  useEffect(() => {
+    const id = setInterval(() => {
+      checkAuth().catch(() => {
         // Errors are handled within the store, status updates automatically
-    })
-  }, 5000)
+      });
+    }, AUTH_CHECK_INTERVAL_MS);
+    return () => clearInterval(id);
+  }, [checkAuth])
 
   return (
     <div className="flex h-screen bg-background">

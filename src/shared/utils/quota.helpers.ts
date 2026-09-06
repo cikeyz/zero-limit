@@ -3,6 +3,7 @@
  */
 
 import type { AuthFile } from '@/types/authFile';
+import type { FileQuota } from '@/types/quota';
 
 // --- Parsers ---
 
@@ -299,4 +300,26 @@ export function getStatusFromError(err: unknown): number | undefined {
     }
   }
   return undefined;
+}
+
+export function clampPct(value: number): number {
+  return Math.min(100, Math.max(0, Math.round(value)));
+}
+
+/** Highest consumed-% on one account, ignoring display-only (separate) lines like burn totals. */
+export function fileWorstUsed(f: FileQuota): number | null {
+  let worst: number | null = null;
+  for (const m of f.models ?? []) {
+    if (m.separate || typeof m.percentage !== 'number') continue;
+    if (worst === null || m.percentage > worst) worst = m.percentage;
+  }
+  for (const l of f.limits ?? []) {
+    if (typeof l.percentage !== 'number') continue;
+    if (worst === null || l.percentage > worst) worst = l.percentage;
+  }
+  return worst;
+}
+
+export function accountLabel(f: FileQuota): string {
+  return f.email || f.filename.replace(/_gmail_com/g, '').replace(/\.json$/g, '');
 }

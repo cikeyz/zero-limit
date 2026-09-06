@@ -36,16 +36,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from '@/shared/components/ui/dialog';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/shared/components/ui/alert-dialog';
+import { ConfirmDialog } from '@/features/providers/ConfirmDialog';
 import { maskEmail } from '@/shared/utils/privacy';
 import {
   useProvidersPresenter,
@@ -142,53 +133,27 @@ export function ProvidersPage() {
       transition={{ duration: 0.4 }}
       className="space-y-8"
     >
-        <AlertDialog open={!!fileToDelete} onOpenChange={(open) => !open && setFileToDelete(null)}>
-        <AlertDialogContent className="border-border/50">
-          <AlertDialogHeader>
-                    <AlertDialogTitle>{t('common.confirm', 'Are you sure?')}</AlertDialogTitle>
-                    <AlertDialogDescription>
-                        {t('common.deleteWarning', 'This action cannot be undone. This will permanently delete your account connection.')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction onClick={executeDelete} className="bg-red-500 hover:bg-red-600 text-white">
-              {t('common.delete')}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        <ConfirmDialog
+          open={!!fileToDelete}
+          onClose={() => setFileToDelete(null)}
+          title={t('common.confirm', 'Are you sure?')}
+          description={t('common.deleteWarning', 'This action cannot be undone. This will permanently delete your account connection.')}
+          cancelLabel={t('common.cancel')}
+          confirmLabel={t('common.delete')}
+          onConfirm={executeDelete}
+        />
 
-      <AlertDialog open={showDeleteAllConfirmation} onOpenChange={setShowDeleteAllConfirmation}>
-        <AlertDialogContent className="border-border/50">
-          <AlertDialogHeader>
-            <AlertDialogTitle>{t('common.confirm', 'Are you sure?')}</AlertDialogTitle>
-            <AlertDialogDescription>
-              {t('providers.deleteAllConfirm', 'This will permanently delete all connected accounts. This action cannot be undone.')}
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeletingAll}>{t('common.cancel')}</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={(e) => {
-                e.preventDefault();
-                executeDeleteAll();
-              }}
-              className="bg-red-500 hover:bg-red-600 text-white"
-              disabled={isDeletingAll}
-            >
-              {isDeletingAll ? (
-                <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                  {t('common.deleting', 'Deleting...')}
-                </>
-              ) : (
-                t('common.deleteAll', 'Delete All')
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={showDeleteAllConfirmation}
+        onClose={() => setShowDeleteAllConfirmation(false)}
+        title={t('common.confirm', 'Are you sure?')}
+        description={t('providers.deleteAllConfirm', 'This will permanently delete all connected accounts. This action cannot be undone.')}
+        cancelLabel={t('common.cancel')}
+        confirmLabel={t('common.deleteAll', 'Delete All')}
+        onConfirm={executeDeleteAll}
+        busy={isDeletingAll}
+        busyLabel={t('common.deleting', 'Deleting...')}
+      />
 
         <div className="flex items-center justify-between">
           <h1 className="text-3xl font-bold">{t('providers.title')}</h1>

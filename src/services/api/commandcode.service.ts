@@ -1,5 +1,5 @@
 import { apiCallApi } from './apiCall';
-import { formatTimeUntil, normalizeNumberValue } from '@/shared/utils/quota.helpers';
+import { clampPct, formatTimeUntil, normalizeNumberValue } from '@/shared/utils/quota.helpers';
 import type { QuotaModel } from '@/types';
 
 export interface CommandCodeQuotaResult {
@@ -9,10 +9,6 @@ export interface CommandCodeQuotaResult {
 }
 
 const BASE = 'https://api.commandcode.ai';
-
-function clampPct(value: number): number {
-  return Math.min(100, Math.max(0, Math.round(value)));
-}
 
 interface WindowLimit {
   used: number | null;
