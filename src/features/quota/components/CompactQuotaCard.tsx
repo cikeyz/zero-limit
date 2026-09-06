@@ -7,6 +7,7 @@ import { Badge } from '@/shared/components/ui/badge';
 import { Clock, RefreshCw, Eye, List, ChevronDown, Ban } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { useMemo, useState } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 import {
   Dialog,
   DialogContent,
@@ -132,8 +133,16 @@ export function CompactQuotaCard({
       )}
 
       {/* Model badges grid with progress bars - expanded view */}
+      <AnimatePresence mode="wait">
       {!loading && !error && !isSuspended && isExpanded && (
-        <div className="grid grid-cols-1 gap-2 flex-1">
+        <motion.div
+          key="expanded"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="grid grid-cols-1 gap-2 flex-1"
+        >
           {groupedItems.filter(g => !g.items.every(i => i.separate)).map((group, idx) => (
             <div key={idx} className="space-y-1">
               {/* Model info row */}
@@ -185,12 +194,19 @@ export function CompactQuotaCard({
               ))}
             </div>
           ))}
-        </div>
+        </motion.div>
       )}
 
       {/* Collapsed compact summary view - simple inline text */}
       {!loading && !error && !isSuspended && !isExpanded && (
-        <div className="text-xs text-muted-foreground space-y-1">
+        <motion.div
+          key="collapsed"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          exit={{ opacity: 0 }}
+          transition={{ duration: 0.15 }}
+          className="text-xs text-muted-foreground space-y-1"
+        >
           {groupedItems.filter(g => !g.items.every(i => i.separate)).map((group, idx) => (
             <div key={idx} className="flex items-center justify-between gap-2 min-w-0">
               <span className="font-medium truncate flex-1" title={group.name}>{group.name}</span>
@@ -217,8 +233,9 @@ export function CompactQuotaCard({
               </div>
             </div>
           ))}
-        </div>
+        </motion.div>
       )}
+      </AnimatePresence>
 
       {/* Footer Row */}
       <div className="flex items-center justify-between pt-2 border-t text-xs text-muted-foreground mt-auto">

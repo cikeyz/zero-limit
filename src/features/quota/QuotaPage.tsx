@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import { motion } from 'motion/react';
+import { motion, AnimatePresence } from 'motion/react';
 import { Card, CardContent } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { RefreshCw, AlertCircle, Loader2, LayoutGrid, List, Eye, EyeOff } from 'lucide-react';
@@ -133,6 +133,14 @@ export function QuotaPage() {
       )}
 
       {/* Filtered Content */}
+      <AnimatePresence mode="wait">
+        <motion.div
+          key={`${activeTab}-${viewMode}`}
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -8 }}
+          transition={{ duration: 0.15 }}
+        >
       {viewMode === 'list' ? (
         <div className="space-y-4">
           {displayedFiles.map(file => {
@@ -176,6 +184,8 @@ export function QuotaPage() {
           })}
         </div>
       )}
+        </motion.div>
+      </AnimatePresence>
     </motion.div>
   );
 }

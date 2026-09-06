@@ -1,4 +1,5 @@
 
+import { motion } from 'motion/react';
 import { cn } from '@/shared/lib/utils';
 import { Badge } from '@/shared/components/ui/badge';
 
@@ -28,12 +29,20 @@ export function ProviderFilter({ items, activeId, onSelect }: ProviderFilterProp
             onClick={() => onSelect(item.id)}
             title={isActive ? undefined : item.label}
             className={cn(
-              "flex min-w-fit items-center gap-2 rounded-lg border px-4 py-2.5 transition-all duration-200",
+              "relative flex min-w-fit items-center gap-2 rounded-lg border px-4 py-2.5 transition-colors duration-200",
               isActive
-                ? "border-primary/50 bg-accent text-accent-foreground shadow-lg shadow-primary/10"
+                ? "border-transparent text-accent-foreground"
                 : "border-border bg-card text-muted-foreground hover:bg-muted hover:text-foreground"
             )}
           >
+            {isActive && (
+              <motion.span
+                layoutId="provider-active-pill"
+                className="absolute inset-0 rounded-lg border border-primary/50 bg-accent shadow-lg shadow-primary/10"
+                transition={{ type: "spring", bounce: 0.15, duration: 0.35 }}
+              />
+            )}
+            <span className="relative z-10 flex min-w-fit items-center gap-2">
             {item.icon && (
                <img
                  src={item.icon}
@@ -63,6 +72,7 @@ export function ProviderFilter({ items, activeId, onSelect }: ProviderFilterProp
             {isActive && (
                 <div className="ml-1 h-1.5 w-1.5 rounded-full bg-green-500"></div>
             )}
+            </span>
           </button>
         );
       })}
