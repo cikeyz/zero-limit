@@ -282,6 +282,9 @@
     "statCost": "Cost",
     "statInput": "Input tokens",
     "auditAsOf": "Audit of Aug 31, 2026",
-    "machineWide": "Machine-wide totals"
+    "machineWide": "Machine-wide totals",
+    "historySubtitle": "Worst consumed-% per provider, logged by ZeroLimit",
+    "historyTitle": "Consumption History",
+    "historyEmpty": "History starts building from your next quota refresh. Open Quota or hit Refresh."
   }
 }

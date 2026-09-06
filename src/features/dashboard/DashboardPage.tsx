@@ -3,6 +3,13 @@ import { motion } from 'motion/react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/shared/components/ui/card';
 import { Button } from '@/shared/components/ui/button';
 import { Users, Activity, TrendingDown, Loader2, RefreshCw, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid } from 'recharts';
+import {
+  ChartContainer,
+  ChartTooltip,
+  ChartTooltipContent,
+} from '@/shared/components/ui/chart';
+import type { ChartConfig } from '@/shared/components/ui/chart';
 import { useDashboardPresenter, formatCompact } from '@/features/dashboard/useDashboardPresenter';
 
 function worstColor(worst: number | null): string {
@@ -23,7 +30,15 @@ export function DashboardPage() {
     attentionItems,
     machineTotals,
     liveTokenRows,
+    historyProviders,
+    historyPoints,
   } = useDashboardPresenter();
+
+  const historyConfig: ChartConfig = {};
+  for (const p of historyProviders) historyConfig[p.key] = { label: p.displayName, color: p.color };
+  const historySpan = historyPoints.length > 1
+    ? (historyPoints[historyPoints.length - 1].t as number) - (historyPoints[0].t as number)
+    : 0;
 
   return (
     <motion.div
@@ -189,6 +204,83 @@ export function DashboardPage() {
 
       {/* Quota Overview Section */}
       <div className="space-y-4">
+        <h2 className="text-2xl font-bold tracking-tight">{t('dashboard.historyTitle')}</h2>
+
+        <Card className="overflow-hidden border-border/50 bg-gradient-to-br from-card to-card/50 gap-2 py-2">
+          <CardHeader className="flex flex-row items-center justify-between space-y-0 p-4 pb-0">
+            <CardTitle className="text-sm font-medium text-muted-foreground">{t('dashboard.historySubtitle')}</CardTitle>
+          </CardHeader>
+          <CardContent className="px-4 pb-4 pt-2">
+            {historyPoints.length === 0 ? (
+              <p className="text-sm text-muted-foreground">{t('dashboard.historyEmpty')}</p>
+            ) : (
+              <div className="rounded-lg bg-card/40 border border-border/50 p-4">
+                <div className="flex flex-wrap gap-2 mb-4">
+                  {historyProviders.map((p) => (
+                    <div key={p.key} className="flex items-center gap-1.5 px-2 py-1 rounded-full bg-background/50 border border-border/50 text-xs">
+                      <span className="h-2 w-2 rounded-full" style={{ backgroundColor: p.color }}></span>
+                      <span className="font-medium">{p.displayName}</span>
+                    </div>
+                  ))}
+                </div>
+                <ChartContainer config={historyConfig} className="h-[260px] w-full">
+                  <LineChart
+                    accessibilityLayer
+                    data={historyPoints}
+                    margin={{ left: 12, right: 12, top: 20 }}
+                  >
+                    <CartesianGrid vertical={false} strokeDasharray="3 3" strokeOpacity={0.2} />
+                    <XAxis
+                      dataKey="t"
+                      tickLine={false}
+                      axisLine={false}
+                      tickMargin={8}
+                      tickFormatter={(value) => {
+                        const date = new Date(value);
+                        return historySpan < 48 * 3600 * 1000
+                          ? date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })
+                          : date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+                      }}
+                    />
+                    <YAxis
+                      tickLine={false}
+                      axisLine={false}
+                      domain={[0, 100]}
+                      tickFormatter={(v) => `${v}%`}
+                      width={44}
+                    />
+                    <ChartTooltip
+                      cursor={{ stroke: 'var(--muted-foreground)', strokeWidth: 1, strokeDasharray: '4 4' }}
+                      content={
+                        <ChartTooltipContent
+                          labelFormatter={(value) => {
+                            if (!value) return '';
+                            return new Date(value).toLocaleString('en-US', {
+                              month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit',
+                            });
+                          }}
+                        />
+                      }
+                    />
+                    {historyProviders.map((p) => (
+                      <Line
+                        key={p.key}
+                        dataKey={p.key}
+                        type="monotone"
+                        stroke={p.color}
+                        strokeWidth={2}
+                        dot={false}
+                        connectNulls
+                        activeDot={{ r: 4, strokeWidth: 0 }}
+                      />
+                    ))}
+                  </LineChart>
+                </ChartContainer>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
         <h2 className="text-2xl font-bold tracking-tight">{t('dashboard.quotaOverview')}</h2>
 
         {/* Needs Attention */}

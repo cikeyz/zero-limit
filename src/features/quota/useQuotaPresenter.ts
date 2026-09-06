@@ -14,6 +14,7 @@ import { accountLabelKey, useAccountLabelsStore } from '@/features/providers/acc
 import { useFileHealthStore } from '@/features/quota/fileHealth.store';
 import { useCommandCodeStore } from '@/features/providers/commandcode.store';
 import { commandcodeApi } from '@/services/api/commandcode.service';
+import { useHistoryStore } from '@/features/dashboard/history.store';
 
 function getProviderType(file: AuthFile): 'antigravity' | 'codex' | 'kiro' | 'copilot' | 'anthropic' | 'cursor' | 'opencode-go' | 'grok' | 'commandcode' | 'unknown' {
   const filename = (file?.filename || file?.id || '').toLowerCase();
@@ -441,6 +442,13 @@ export function useQuotaPresenter() {
   const reload = useCallback(() => {
     loadAuthFiles();
   }, [loadAuthFiles]);
+
+  // ZeroLimit logs itself: every settled quota refresh appends a snapshot
+  // so the dashboard can chart consumption history. Runs on both the Quota
+  // and Dashboard pages since both mount this presenter.
+  useEffect(() => {
+    useHistoryStore.getState().recordSnapshot(sections);
+  }, [sections]);
 
   useEffect(() => {
     const handler = () => loadAuthFiles();

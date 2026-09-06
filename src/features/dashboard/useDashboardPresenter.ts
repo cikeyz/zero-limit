@@ -6,7 +6,19 @@ import { useHeaderRefresh } from '@/shared/hooks';
 import { authFilesApi } from '@/services/api/auth.service';
 import { useQuotaPresenter, ICON_MAP } from '@/features/quota/useQuotaPresenter';
 import { getMachineUsage, type MachineUsageTotals } from '@/services/api/machineUsage.service';
+import { useHistoryStore } from '@/features/dashboard/history.store';
 import type { FileQuota } from '@/types';
+
+const HISTORY_COLORS = [
+  '#10b981', '#f59e0b', '#ef4444', '#3b82f6', '#a855f7',
+  '#06b6d4', '#f97316', '#84cc16', '#e879f9', '#64748b',
+];
+
+export interface HistoryProvider {
+  key: string;
+  displayName: string;
+  color: string;
+}
 
 export interface ProviderSummary {
   provider: string;
@@ -191,6 +203,38 @@ export function useDashboardPresenter() {
     return rows;
   }, [quota.sections]);
 
+  const snapshots = useHistoryStore((s) => s.snapshots);
+
+  const historyProviders: HistoryProvider[] = useMemo(() => {
+    const map = new Map<string, string>();
+    for (const snap of snapshots) {
+      for (const a of snap.accounts) {
+        if (!map.has(a.provider)) map.set(a.provider, a.displayName);
+      }
+    }
+    return Array.from(map.entries())
+      .sort((a, b) => a[0].localeCompare(b[0]))
+      .map(([key, displayName], i) => ({
+        key,
+        displayName,
+        color: HISTORY_COLORS[i % HISTORY_COLORS.length],
+      }));
+  }, [snapshots]);
+
+  const historyPoints: Record<string, number | string>[] = useMemo(() => {
+    return snapshots.slice(-200).map((snap) => {
+      const point: Record<string, number | string> = { t: snap.t };
+      const worstByProvider = new Map<string, number>();
+      for (const a of snap.accounts) {
+        if (a.worst === null) continue;
+        const prev = worstByProvider.get(a.provider);
+        if (prev === undefined || a.worst > prev) worstByProvider.set(a.provider, a.worst);
+      }
+      for (const [key, worst] of worstByProvider) point[key] = worst;
+      return point;
+    });
+  }, [snapshots]);
+
   return {
     connectionStatus,
     quotaLoading: quota.loading,
@@ -200,5 +244,7 @@ export function useDashboardPresenter() {
     attentionItems,
     machineTotals,
     liveTokenRows,
+    historyProviders,
+    historyPoints,
   };
 }
