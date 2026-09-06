@@ -49,14 +49,14 @@ Built with **Tauri + React + Rust**, ZeroLimit runs on **Windows**, **macOS**, a
 ## 📦 Installation
 
 ### Windows
-Download from [Releases](https://github.com/0xtbug/zero-limit/releases):
+Download from [Releases](https://github.com/cikeyz/zero-limit/releases):
 - `ZeroLimit_x.x.x_x64-setup.exe` - NSIS installer (x64)
 - `ZeroLimit_x.x.x_arm64-setup.exe` - NSIS installer (ARM64)
 - `ZeroLimit_x.x.x_x64_en-US.msi` - MSI installer (x64)
 - `ZeroLimit_x.x.x_portable.exe` - Portable executable
 
 ### macOS
-Download from [Releases](https://github.com/0xtbug/zero-limit/releases):
+Download from [Releases](https://github.com/cikeyz/zero-limit/releases):
 - `ZeroLimit_x.x.x_aarch64.dmg` - Apple Silicon (M1/M2/M3)
 - `ZeroLimit_x.x.x_x64.dmg` - Intel
 
@@ -66,7 +66,7 @@ Download from [Releases](https://github.com/0xtbug/zero-limit/releases):
 > ```
 
 ### Linux
-Download from [Releases](https://github.com/0xtbug/zero-limit/releases):
+Download from [Releases](https://github.com/cikeyz/zero-limit/releases):
 - `.deb` - Debian/Ubuntu
 - `.rpm` - Fedora/RHEL
 - `.AppImage` - Universal
@@ -75,7 +75,7 @@ Download from [Releases](https://github.com/0xtbug/zero-limit/releases):
 
 ```bash
 # Clone repository
-git clone https://github.com/0xtbug/zero-limit.git
+git clone https://github.com/cikeyz/zero-limit.git
 cd zero-limit
 
 # Install dependencies
@@ -128,18 +128,18 @@ pnpm run tauri build
   <source
     media="(prefers-color-scheme: dark)"
     srcset="
-      https://api.star-history.com/svg?repos=0xtbug/zero-limit&type=Date&theme=dark
+      https://api.star-history.com/svg?repos=cikeyz/zero-limit&type=Date&theme=dark
     "
   />
   <source
     media="(prefers-color-scheme: light)"
     srcset="
-      https://api.star-history.com/svg?repos=0xtbug/zero-limit&type=Date
+      https://api.star-history.com/svg?repos=cikeyz/zero-limit&type=Date
     "
   />
   <img
     alt="Star History Chart"
-    src="https://api.star-history.com/svg?repos=0xtbug/zero-limit&type=Date"
+    src="https://api.star-history.com/svg?repos=cikeyz/zero-limit&type=Date"
   />
 </picture>
 
@@ -152,3 +152,4 @@ MIT License - see [LICENSE](LICENSE) for details.
 <p align="center">
   Made with ❤️ using Tauri + React
 </p>
+

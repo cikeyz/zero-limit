@@ -19,7 +19,7 @@ export function AboutPage() {
   const version = useAppVersion();
 
   const openGitHub = async () => {
-    await open('https://github.com/0xtbug/zero-limit');
+    await open('https://github.com/cikeyz/zero-limit');
   };
 
   return (
@@ -109,7 +109,7 @@ export function AboutPage() {
         <Card className="flex flex-col items-center p-6 min-w-[140px]">
           <User className="h-6 w-6 text-muted-foreground mb-2" />
           <span className="text-xs text-muted-foreground uppercase tracking-wide">{t('about.author')}</span>
-          <span className="font-semibold">0xtbug</span>
+          <span className="font-semibold">cikeyz</span>
         </Card>
 
         <Card
