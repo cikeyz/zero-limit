@@ -98,7 +98,7 @@ export function CompactQuotaCard({
   };
 
   return (
-    <Card className="p-4 space-y-3 hover:shadow-md transition-shadow h-full flex flex-col">
+    <Card className="p-4 space-y-3 hover:shadow-md transition-shadow h-full flex flex-col gap-0">
       {/* Email with expand/collapse toggle */}
       <div className="flex items-center justify-between min-w-0">
         <div className="flex items-center gap-2 min-w-0 flex-1">
