@@ -2,5 +2,5 @@
  * Hooks barrel export
  */
 
-export { useHeaderRefresh, triggerHeaderRefresh } from './useHeaderRefresh';
+export { useHeaderRefresh } from './useHeaderRefresh';
 export * from './useAppVersion';

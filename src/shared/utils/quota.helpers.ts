@@ -40,20 +40,6 @@ export function normalizeNumberValue(value: unknown): number | null {
   return null;
 }
 
-export function normalizeQuotaFraction(value: unknown): number | null {
-  const normalized = normalizeNumberValue(value);
-  if (normalized !== null) return normalized;
-  if (typeof value === 'string') {
-    const trimmed = value.trim();
-    if (!trimmed) return null;
-    if (trimmed.endsWith('%')) {
-      const parsed = Number(trimmed.slice(0, -1));
-      return Number.isFinite(parsed) ? parsed / 100 : null;
-    }
-  }
-  return null;
-}
-
 export function normalizePlanType(value: unknown): string | null {
   const normalized = normalizeStringValue(value);
   return normalized ? normalized.toLowerCase() : null;
@@ -186,28 +172,6 @@ export interface CodexUsagePayload {
   [key: string]: unknown;
 }
 
-export interface AntigravityModelsPayload {
-  models?: Record<string, unknown>;
-  [key: string]: unknown;
-}
-
-export function parseAntigravityPayload(payload: unknown): AntigravityModelsPayload | null {
-  if (payload === undefined || payload === null) return null;
-  if (typeof payload === 'string') {
-    const trimmed = payload.trim();
-    if (!trimmed) return null;
-    try {
-      return JSON.parse(trimmed) as AntigravityModelsPayload;
-    } catch {
-      return null;
-    }
-  }
-  if (typeof payload === 'object') {
-    return payload as AntigravityModelsPayload;
-  }
-  return null;
-}
-
 export function parseCodexUsagePayload(payload: unknown): CodexUsagePayload | null {
   if (payload === undefined || payload === null) return null;
   if (typeof payload === 'string') {
@@ -255,25 +219,6 @@ export function formatTimeUntil(targetTime: number | string): string {
   return `${minutes}m`;
 }
 
-export function formatUnixSeconds(value: number | null): string {
-  if (!value) return '-';
-  // Use formatTimeUntil for consistency if we wanted, but keeping absolute for now
-  // unless user specifically requested ALL to be relative.
-  // The user asked "fix for reset hours using estimate", implying relative.
-  // But let's keep formatUnixSeconds as absolute strictly speaking,
-  // and change the callers to use formatTimeUntil.
-
-  const date = new Date(value * 1000);
-  if (Number.isNaN(date.getTime())) return '-';
-  return date.toLocaleString(undefined, {
-    month: '2-digit',
-    day: '2-digit',
-    hour: '2-digit',
-    minute: '2-digit',
-    hour12: false
-  });
-}
-
 export function formatCodexResetLabel(window?: CodexUsageWindow | null): string {
   if (!window) return '-';
   const resetAt = normalizeNumberValue(window.reset_at ?? window.resetAt);
@@ -286,20 +231,6 @@ export function formatCodexResetLabel(window?: CodexUsageWindow | null): string 
     return formatTimeUntil(targetSeconds);
   }
   return '-';
-}
-
-export function getStatusFromError(err: unknown): number | undefined {
-  if (typeof err === 'object' && err !== null && 'status' in err) {
-    const rawStatus = (err as { status?: unknown }).status;
-    if (typeof rawStatus === 'number' && Number.isFinite(rawStatus)) {
-      return rawStatus;
-    }
-    const asNumber = Number(rawStatus);
-    if (Number.isFinite(asNumber) && asNumber > 0) {
-      return asNumber;
-    }
-  }
-  return undefined;
 }
 
 export function clampPct(value: number): number {

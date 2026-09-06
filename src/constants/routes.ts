@@ -15,13 +15,3 @@ export const NAV_ITEMS = [
   { path: '/settings', icon: Settings, labelKey: 'nav.settings' },
   { path: '/about', icon: Info, labelKey: 'nav.about' },
 ] as const;
-
-export const ROUTE_PATHS = {
-  DASHBOARD: '/dashboard',
-  QUOTA: '/quota',
-  PROVIDERS: '/providers',
-  LOGS: '/logs',
-  SETTINGS: '/settings',
-  ABOUT: '/about',
-  LOGIN: '/login',
-} as const;

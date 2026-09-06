@@ -1,4 +1,4 @@
-import axios, { AxiosInstance, AxiosRequestConfig, AxiosResponse } from 'axios';
+import axios, { AxiosInstance, AxiosRequestConfig } from 'axios';
 import {
   BUILD_DATE_HEADER_KEYS,
   MANAGEMENT_API_PREFIX,
@@ -160,14 +160,6 @@ class ApiClient {
   async put<T = unknown>(url: string, data?: unknown, config?: AxiosRequestConfig): Promise<T> {
     const response = await this.instance.put<T>(url, data, config);
     return response.data;
-  }
-
-  async getRaw(url: string, config?: AxiosRequestConfig): Promise<AxiosResponse> {
-    return this.instance.get(url, config);
-  }
-
-  async requestRaw(config: AxiosRequestConfig): Promise<AxiosResponse> {
-    return this.instance.request(config);
   }
 }
 

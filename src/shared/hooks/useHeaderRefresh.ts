@@ -14,7 +14,3 @@ export function useHeaderRefresh(callback: () => void): void {
     return () => window.removeEventListener(REFRESH_EVENT, handler);
   }, [callback]);
 }
-
-export function triggerHeaderRefresh(): void {
-  window.dispatchEvent(new Event(REFRESH_EVENT));
-}
